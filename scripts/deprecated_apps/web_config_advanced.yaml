@@ -1,0 +1,151 @@
+# Advanced Configuration for AI Watermark Remover
+# 包含所有可自定义的高级参数
+
+app:
+  title: "AI Watermark Remover Advanced"
+  host: "0.0.0.0"
+  port: 8503
+  debug: false
+
+# 基础处理选项
+processing:
+  default_max_bbox_percent: 10.0
+  default_transparent: false
+  default_overwrite: false
+  default_force_format: "PNG"  # PNG, WEBP, JPG
+  supported_formats: ["jpg", "jpeg", "png", "webp"]
+
+# Mask生成器高级配置
+mask_generator:
+  model_type: "custom"  # "custom" or "florence"
+  mask_model_path: "./models/epoch=071-valid_iou=0.7267.ckpt"
+  
+  # 自定义模型参数
+  custom_model:
+    image_size: 768
+    imagenet_mean: [0.485, 0.456, 0.406]
+    imagenet_std: [0.229, 0.224, 0.225]
+    mask_threshold: 0.5  # 0.0-1.0, 二值化阈值
+    mask_dilate_kernel_size: 3  # 1-15, 膨胀核大小
+    mask_dilate_iterations: 1  # 1-5, 膨胀迭代次数
+  
+  # Florence-2模型参数
+  florence_model:
+    detection_prompt: "watermark"  # 检测提示词
+    max_bbox_percent: 10.0  # 1.0-50.0, 最大边界框百分比
+    confidence_threshold: 0.3  # 0.1-0.9, 检测置信度阈值
+    custom_prompts:  # 预设提示词
+      - "watermark"
+      - "logo"
+      - "text overlay"
+      - "signature"
+      - "copyright mark"
+      - "brand mark"
+
+# LaMA Inpainting高级参数
+lama_inpainting:
+  # 扩散模型参数
+  ldm_steps: 50  # 10-200, 扩散步数
+  ldm_sampler: "ddim"  # ddim, plms, dpm_solver++
+  
+  # 高分辨率策略
+  hd_strategy: "CROP"  # CROP, RESIZE, ORIGINAL
+  hd_strategy_crop_margin: 64  # 32-256, 裁剪边距
+  hd_strategy_crop_trigger_size: 800  # 512-2048, 触发裁剪的尺寸
+  hd_strategy_resize_limit: 1600  # 1024-4096, resize限制
+  
+  # 其他参数
+  guidance_scale: 7.5  # 1.0-20.0, 引导尺度
+  num_inference_steps: 50  # 10-200, 推理步数
+  seed: -1  # -1为随机, >=0为固定种子
+
+# 图像预处理参数
+image_preprocessing:
+  # 输入图像调整
+  max_input_size: 2048  # 512-4096, 最大输入尺寸
+  resize_method: "lanczos"  # nearest, bilinear, bicubic, lanczos
+  normalize_input: true  # 是否标准化输入
+  
+  # 颜色空间处理
+  color_space: "RGB"  # RGB, LAB, HSV
+  gamma_correction: 1.0  # 0.5-2.0, gamma校正
+  contrast_enhancement: 1.0  # 0.5-2.0, 对比度增强
+
+# 后处理参数
+post_processing:
+  # Mask后处理
+  mask_blur_radius: 0  # 0-10, mask模糊半径
+  mask_feather_size: 0  # 0-20, mask羽化大小
+  mask_erosion_size: 0  # 0-10, mask腐蚀大小 (负值=膨胀)
+  
+  # 结果优化
+  edge_smoothing: false  # 边缘平滑
+  color_matching: true  # 颜色匹配
+  seamless_clone: false  # 无缝克隆
+  
+  # 输出调整
+  output_sharpening: 0.0  # 0.0-2.0, 输出锐化
+  output_denoising: 0.0  # 0.0-1.0, 输出降噪
+
+# 模型路径配置
+models:
+  florence_model: "microsoft/Florence-2-large"
+  lama_model: "lama"
+  
+  # 可选的其他模型
+  alternative_models:
+    florence_base: "microsoft/Florence-2-base"
+    lama_large: "lama-large"  # 如果可用
+
+# 文件处理
+files:
+  max_upload_size: 20  # MB
+  temp_dir: "./temp"
+  output_dir: "./output"
+  allowed_extensions: [".jpg", ".jpeg", ".png", ".webp", ".tiff", ".bmp"]
+  
+  # 输出质量设置
+  jpeg_quality: 95  # 1-100
+  webp_quality: 95  # 1-100
+  png_compression: 6  # 0-9
+
+# UI高级设置
+ui:
+  show_advanced_options: true
+  show_system_info: true
+  enable_batch_processing: true
+  enable_custom_mask_upload: true
+  enable_manual_mask_editing: false  # 手绘功能 (待实现)
+  enable_before_after_comparison: false  # 对比功能 (待实现)
+  
+  # 参数预设
+  parameter_presets:
+    fast:
+      ldm_steps: 20
+      hd_strategy_resize_limit: 1024
+      mask_dilate_kernel_size: 1
+    balanced:
+      ldm_steps: 50
+      hd_strategy_resize_limit: 1600
+      mask_dilate_kernel_size: 3
+    quality:
+      ldm_steps: 100
+      hd_strategy_resize_limit: 2048
+      mask_dilate_kernel_size: 5
+    ultra:
+      ldm_steps: 200
+      hd_strategy_resize_limit: 4096
+      mask_dilate_kernel_size: 7
+
+# 性能和调试
+performance:
+  enable_gpu_acceleration: true
+  mixed_precision: true  # 混合精度计算
+  batch_size: 1  # 批处理大小
+  memory_fraction: 0.8  # GPU内存占用比例
+  
+debug:
+  save_intermediate_results: false  # 保存中间结果
+  log_processing_time: true  # 记录处理时间
+  show_memory_usage: true  # 显示内存使用
+  verbose_logging: false  # 详细日志

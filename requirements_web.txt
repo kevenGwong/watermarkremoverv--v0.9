@@ -1,0 +1,28 @@
+# Web UI specific requirements
+streamlit>=1.28.0
+PyYAML>=6.0
+psutil>=5.9.0
+
+# AI/ML frameworks
+torch
+torchvision
+transformers>=4.35.0
+iopaint>=1.2.0
+
+# Image processing
+opencv-python-headless
+Pillow>=9.0.0
+numpy>=1.24.0
+
+# Deep learning models
+segmentation-models-pytorch
+albumentations
+
+# Utilities
+loguru
+tqdm
+click
+
+# Optional: Testing
+pytest>=7.0.0
+pytest-asyncio

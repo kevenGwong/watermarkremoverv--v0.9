@@ -1,0 +1,40 @@
+# 模型文件（太大，不适合Git）
+models/
+*.ckpt
+*.pth
+*.safetensors
+
+# Python缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 虚拟环境
+venv/
+env/
+.venv/
+.env/
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 临时文件
+temp/
+*.tmp
+*.log
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 测试输出
+test/output/
+scripts/test_outputs/
+
+# 环境变量
+.env
+.env.local
