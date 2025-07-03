@@ -1,0 +1,20 @@
+name: py312aiwatermark
+channels:
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - numpy
+  - tqdm
+  - loguru
+  - click
+  - pillow
+  - opencv
+  - pip:
+    - --index-url https://download.pytorch.org/whl/nightly/cu128
+    - --pre 
+    - torch
+    - torchvision 
+    - torchaudio  

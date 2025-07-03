@@ -1,0 +1,29 @@
+# Core dependencies
+click>=8.2.1
+opencv-python>=4.11.0
+numpy>=1.26.4
+Pillow>=9.5.0
+PyYAML>=6.0.2
+psutil>=7.0.0
+loguru>=0.7.3
+tqdm>=4.67.1
+
+# AI/ML frameworks
+torch>=2.7.1
+torchvision>=0.22.1
+transformers>=4.48.3
+iopaint>=1.6.0
+
+# Deep learning models
+segmentation-models-pytorch>=0.5.0
+albumentations>=2.0.8
+
+# Web UI
+streamlit>=1.46.1
+streamlit-image-comparison>=0.0.4
+
+# GUI (optional)
+PyQt6
+
+# Visualization
+matplotlib>=3.10.3
