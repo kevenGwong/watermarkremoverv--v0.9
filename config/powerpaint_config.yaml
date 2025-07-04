@@ -1,0 +1,133 @@
+# PowerPaint v2 Configuration for AI Watermark Remover
+# Optimized for high-quality watermark removal using Stable Diffusion 1.5 inpainting
+
+app:
+  title: "AI Watermark Remover - PowerPaint v2"
+  host: "0.0.0.0"
+  port: 8501
+  debug: false
+
+# Processing Options
+processing:
+  default_max_bbox_percent: 10.0
+  default_transparent: false
+  default_overwrite: false
+  default_force_format: "PNG"
+  supported_formats: ["jpg", "jpeg", "png", "webp"]
+
+# Mask Generator Configuration
+mask_generator:
+  model_type: "custom"  # "custom", "florence2", or "upload"
+  mask_model_path: "./data/models/epoch=071-valid_iou=0.7267.ckpt"
+  image_size: 768
+  imagenet_mean: [0.485, 0.456, 0.406]
+  imagenet_std: [0.229, 0.224, 0.225]
+  mask_threshold: 0.5
+  mask_dilate_kernel_size: 3
+  mask_dilate_iterations: 1
+
+# Model Paths
+models:
+  # Florence-2 for watermark detection (fallback)
+  florence_model: "microsoft/Florence-2-large"
+  
+  # LaMA for fast inpainting (fallback)
+  lama_model: "lama"
+  
+  # PowerPaint v2 model (primary)
+  powerpaint_model_path: "./models/powerpaint_v2/Realistic_Vision_V1.4-inpainting"
+  
+  # Default inpainting method
+  default_inpainting: "powerpaint"  # "powerpaint" or "lama"
+
+# PowerPaint v2 Configuration
+powerpaint_config:
+  # Model Performance Settings
+  use_fp16: true                              # Use half precision for speed/memory
+  enable_attention_slicing: true              # Reduce memory usage
+  enable_memory_efficient_attention: true    # XFormers optimization
+  enable_vae_slicing: false                   # VAE slicing (enable if memory issues)
+  
+  # Default Generation Parameters
+  num_inference_steps: 50                     # 10-100, quality vs speed trade-off
+  guidance_scale: 7.5                         # 1.0-20.0, prompt adherence
+  strength: 1.0                               # 0.1-1.0, how much to change masked area
+  
+  # Prompts
+  default_prompt: "high quality, detailed, clean, professional photo, realistic, sharp"
+  default_negative_prompt: "watermark, logo, text, signature, blurry, low quality, artifacts, distorted, deformed, noise, oversaturated"
+  
+  # High-Resolution Processing
+  crop_trigger_size: 512                      # Images larger than this use crop strategy
+  crop_margin: 64                             # Margin around mask regions
+  resize_to_512: true                         # Resize crops to optimal SD1.5 size
+  
+  # Blending Settings
+  blend_edges: true                           # Smooth edge blending
+  edge_feather: 5                             # Edge feathering strength (1-15)
+  
+  # Reproducibility
+  seed: -1                                    # -1 for random, >=0 for fixed
+
+# LaMA Configuration (Fallback)
+lama_config:
+  ldm_steps: 50
+  ldm_sampler: "ddim"
+  hd_strategy: "CROP"
+  hd_strategy_crop_margin: 64
+  hd_strategy_crop_trigger_size: 800
+  hd_strategy_resize_limit: 1600
+
+# File Handling
+files:
+  max_upload_size: 20  # MB
+  temp_dir: "./temp"
+  output_dir: "./data/output"
+  allowed_extensions: [".jpg", ".jpeg", ".png", ".webp"]
+
+# UI Configuration
+ui:
+  show_advanced_options: true
+  show_system_info: true
+  enable_batch_processing: false
+  default_download_format: "png"
+  
+  # PowerPaint specific UI
+  show_powerpaint_params: true
+  show_prompt_editor: true
+  show_seed_control: true
+  show_crop_settings: true
+  
+  # Parameter Ranges (for UI sliders)
+  parameter_ranges:
+    num_inference_steps: [10, 100]
+    guidance_scale: [1.0, 20.0]
+    strength: [0.1, 1.0]
+    crop_trigger_size: [256, 1024]
+    crop_margin: [32, 128]
+    edge_feather: [1, 15]
+
+# Performance Monitoring
+performance:
+  log_processing_time: true
+  log_memory_usage: true
+  save_intermediate_results: false
+  
+# Logging
+logging:
+  level: "INFO"
+  format: "%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d - %(message)s"
+  
+# Advanced Settings
+advanced:
+  # Fallback behavior
+  fallback_to_lama: true                      # Fall back to LaMA if PowerPaint fails
+  auto_optimize_for_gpu: true                 # Auto-adjust settings based on GPU
+  
+  # Memory management
+  clear_cache_after_processing: true
+  max_concurrent_processes: 1
+  
+  # Quality settings
+  preserve_original_resolution: true
+  use_high_quality_resize: true

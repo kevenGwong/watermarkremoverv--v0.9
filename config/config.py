@@ -108,30 +108,57 @@ class ConfigManager:
         """验证inpainting参数"""
         validated = params.copy()
         
-        # 验证LDM步数
-        if 'ldm_steps' in validated:
-            validated['ldm_steps'] = max(10, min(200, validated['ldm_steps']))
+        model_type = validated.get('inpaint_model', 'lama')
         
-        # 验证采样器
-        if 'ldm_sampler' in validated:
-            if validated['ldm_sampler'] not in ['ddim', 'plms']:
-                validated['ldm_sampler'] = 'ddim'
-        
-        # 验证HD策略
-        if 'hd_strategy' in validated:
-            if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
-                validated['hd_strategy'] = 'CROP'
-        
-        # 验证crop参数
-        if 'hd_strategy_crop_margin' in validated:
-            validated['hd_strategy_crop_margin'] = max(32, min(256, validated['hd_strategy_crop_margin']))
-        
-        if 'hd_strategy_crop_trigger_size' in validated:
-            validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
-        
-        # 验证resize参数
-        if 'hd_strategy_resize_limit' in validated:
-            validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+        if model_type == 'powerpaint':
+            # PowerPaint parameter validation
+            if 'num_inference_steps' in validated:
+                validated['num_inference_steps'] = max(10, min(100, validated['num_inference_steps']))
+            
+            if 'guidance_scale' in validated:
+                validated['guidance_scale'] = max(1.0, min(20.0, validated['guidance_scale']))
+            
+            if 'strength' in validated:
+                validated['strength'] = max(0.1, min(1.0, validated['strength']))
+            
+            if 'crop_trigger_size' in validated:
+                validated['crop_trigger_size'] = max(256, min(1024, validated['crop_trigger_size']))
+            
+            if 'crop_margin' in validated:
+                validated['crop_margin'] = max(32, min(128, validated['crop_margin']))
+            
+            if 'edge_feather' in validated:
+                validated['edge_feather'] = max(1, min(15, validated['edge_feather']))
+            
+            # Ensure boolean parameters
+            validated['resize_to_512'] = bool(validated.get('resize_to_512', True))
+            validated['blend_edges'] = bool(validated.get('blend_edges', True))
+            
+        else:
+            # LaMA parameter validation
+            if 'ldm_steps' in validated:
+                validated['ldm_steps'] = max(10, min(200, validated['ldm_steps']))
+            
+            # 验证采样器
+            if 'ldm_sampler' in validated:
+                if validated['ldm_sampler'] not in ['ddim', 'plms']:
+                    validated['ldm_sampler'] = 'ddim'
+            
+            # 验证HD策略
+            if 'hd_strategy' in validated:
+                if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+                    validated['hd_strategy'] = 'CROP'
+            
+            # 验证crop参数
+            if 'hd_strategy_crop_margin' in validated:
+                validated['hd_strategy_crop_margin'] = max(32, min(256, validated['hd_strategy_crop_margin']))
+            
+            if 'hd_strategy_crop_trigger_size' in validated:
+                validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+            
+            # 验证resize参数
+            if 'hd_strategy_resize_limit' in validated:
+                validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
         
         return validated
     
@@ -155,17 +182,34 @@ class ConfigManager:
                 'mask_dilate_kernel_size': 0
             }
     
-    def get_default_inpaint_params(self) -> Dict[str, Any]:
+    def get_default_inpaint_params(self, model_type: str = "lama") -> Dict[str, Any]:
         """获取默认inpainting参数"""
-        return {
-            'ldm_steps': self.app_config.default_ldm_steps,
-            'ldm_sampler': self.app_config.default_ldm_sampler,
-            'hd_strategy': self.app_config.default_hd_strategy,
-            'hd_strategy_crop_margin': self.app_config.default_crop_margin,
-            'hd_strategy_crop_trigger_size': self.app_config.default_crop_trigger_size,
-            'hd_strategy_resize_limit': self.app_config.default_resize_limit,
-            'seed': -1
-        }
+        if model_type == "powerpaint":
+            return {
+                'inpaint_model': 'powerpaint',
+                'prompt': 'high quality, detailed, clean, professional photo',
+                'negative_prompt': 'watermark, logo, text, signature, blurry, low quality, artifacts, distorted, deformed',
+                'num_inference_steps': 50,
+                'guidance_scale': 7.5,
+                'strength': 1.0,
+                'crop_trigger_size': 512,
+                'crop_margin': 64,
+                'resize_to_512': True,
+                'blend_edges': True,
+                'edge_feather': 5,
+                'seed': -1
+            }
+        else:
+            return {
+                'inpaint_model': 'lama',
+                'ldm_steps': self.app_config.default_ldm_steps,
+                'ldm_sampler': self.app_config.default_ldm_sampler,
+                'hd_strategy': self.app_config.default_hd_strategy,
+                'hd_strategy_crop_margin': self.app_config.default_crop_margin,
+                'hd_strategy_crop_trigger_size': self.app_config.default_crop_trigger_size,
+                'hd_strategy_resize_limit': self.app_config.default_resize_limit,
+                'seed': -1
+            }
     
     def get_default_performance_params(self) -> Dict[str, Any]:
         """获取默认性能参数"""

@@ -3,6 +3,14 @@ AI Watermark Remover - 模块化主入口
 整合配置、UI、推理和图像处理模块
 """
 
+import sys
+import os
+from pathlib import Path
+
+# Add project root to Python path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
 import streamlit as st
 import logging
 from PIL import Image
@@ -78,15 +86,19 @@ def main():
     init_session_state()
     
     # 初始化推理管理器
-    inference_manager = InferenceManager(config_manager)
+    config_path = config_manager.config_file if hasattr(config_manager, 'config_file') else None
+    inference_manager = InferenceManager(config_manager, config_path)
     
     # 初始化主界面
     main_interface = MainInterface(config_manager)
     
     # 加载处理器
     if not load_processor(inference_manager):
-        st.error("Failed to initialize application. Please check the logs.")
-        return
+        st.error("❌ Failed to initialize AI models. Please check:")
+        st.error("1. Model files exist in the correct paths")
+        st.error("2. Dependencies are properly installed") 
+        st.error("3. CUDA/GPU setup if using GPU acceleration")
+        st.stop()
     
     # 渲染主界面
     main_interface.render(

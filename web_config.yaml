@@ -1,0 +1,57 @@
+# Web UI Configuration for Watermark Remover
+app:
+  title: "AI Watermark Remover"
+  host: "0.0.0.0"
+  port: 8501
+  debug: false
+
+# Processing options
+processing:
+  default_max_bbox_percent: 10.0
+  default_transparent: false
+  default_overwrite: false
+  default_force_format: "None"  # None, PNG, WEBP, JPG
+  supported_formats: ["jpg", "jpeg", "png", "webp"]
+
+# Custom mask generator configuration
+mask_generator:
+  model_type: "custom"  # "custom" or "florence"
+  mask_model_path: "/home/duolaameng/SAM_Remove/Watermark_sam/output/checkpoints/epoch=071-valid_iou=0.7267.ckpt"
+  image_size: 768
+  imagenet_mean: [0.485, 0.456, 0.406]
+  imagenet_std: [0.229, 0.224, 0.225]
+  mask_threshold: 0.5
+  mask_dilate_kernel_size: 3
+
+# Model paths
+models:
+  florence_model: "microsoft/Florence-2-large"
+  lama_model: "lama"  # iopaint model name
+  powerpaint_model_path: "./models/powerpaint_v2/Realistic_Vision_V1.4-inpainting"
+
+# File handling
+files:
+  max_upload_size: 10  # MB
+  temp_dir: "./temp"
+  output_dir: "./output"
+  allowed_extensions: [".jpg", ".jpeg", ".png", ".webp"]
+
+# UI settings
+ui:
+  show_advanced_options: true
+  show_system_info: true
+  enable_batch_processing: true
+  default_download_format: "png"
+
+# PowerPaint configuration
+powerpaint_config:
+  use_fp16: true
+  enable_attention_slicing: true
+  enable_memory_efficient_attention: true
+  default_num_inference_steps: 50
+  default_guidance_scale: 7.5
+  default_strength: 1.0
+  default_prompt: "high quality, clean, natural"
+  default_negative_prompt: "watermark, logo, text, artifacts, blurry"
+  crop_trigger_size: 512
+  crop_margin: 64

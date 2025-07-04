@@ -113,59 +113,153 @@ class ParameterPanel:
         st.sidebar.subheader("🎨 Inpainting Parameters")
         inpaint_params = {}
         
-        inpaint_params['prompt'] = st.sidebar.text_input(
-            "Prompt",
-            value="",
-            help="文本提示词（注意：当前LaMA模型不支持prompt，保留供未来使用）",
-            disabled=True
+        # Inpainting model selection
+        inpaint_model = st.sidebar.selectbox(
+            "Inpainting Model",
+            ["powerpaint", "lama"],  # 将 PowerPaint 设为第一个选项
+            index=0,  # 默认选择 PowerPaint
+            format_func=lambda x: "PowerPaint (Object Removal)" if x == "powerpaint" else "LaMA (Fast)",
+            help="Choose inpainting model: PowerPaint for object removal, LaMA for speed"
         )
+        inpaint_params['inpaint_model'] = inpaint_model
         
-        if inpaint_params['prompt']:
-            st.sidebar.info("💡 LaMA模型暂不支持prompt，此参数保留供未来扩展")
-        else:
-            st.sidebar.info("ℹ️ Prompt功能暂不可用，LaMA为无条件inpainting模型")
-        
-        inpaint_params['ldm_steps'] = st.sidebar.slider(
-            "LDM Steps", 10, 200, 50, 10,
-            help="扩散模型步数，更多步数=更高质量"
-        )
-        
-        inpaint_params['ldm_sampler'] = st.sidebar.selectbox(
-            "LDM Sampler",
-            ["ddim", "plms"],
-            help="采样器选择"
-        )
-        
-        inpaint_params['hd_strategy'] = st.sidebar.selectbox(
-            "HD Strategy",
-            ["CROP", "RESIZE", "ORIGINAL"],
-            help="高分辨率处理策略"
-        )
-        
-        # 只在CROP策略下显示Crop Margin
-        if inpaint_params['hd_strategy'] == "CROP":
-            inpaint_params['hd_strategy_crop_margin'] = st.sidebar.slider(
-                "Crop Margin", 32, 256, 64, 16,
-                help="分块处理边距"
+        if inpaint_model == "powerpaint":
+            # PowerPaint specific parameters
+            st.sidebar.write("**PowerPaint Object Removal Parameters:**")
+            
+            # Task selection for PowerPaint
+            task_type = st.sidebar.selectbox(
+                "PowerPaint Task",
+                ["object-removal", "text-guided"],
+                format_func=lambda x: "Object Removal" if x == "object-removal" else "Text Guided",
+                help="PowerPaint task type: Object removal for watermarks, Text guided for custom content"
             )
-            inpaint_params['hd_strategy_crop_trigger_size'] = st.sidebar.slider(
-                "Crop Trigger Size", 512, 2048, 800, 64,
-                help="触发分块处理的最小尺寸"
+            inpaint_params['task'] = task_type
+            
+            if task_type == "object-removal":
+                # Object removal specific prompts
+                inpaint_params['prompt'] = st.sidebar.text_area(
+                    "Positive Prompt",
+                    value="empty scene blur, clean background, natural environment",
+                    help="Describe the background to fill the removed area"
+                )
+                
+                inpaint_params['negative_prompt'] = st.sidebar.text_area(
+                    "Negative Prompt",
+                    value="object, person, animal, vehicle, building, text, watermark, logo, worst quality, low quality, normal quality, bad quality, blurry, artifacts",
+                    help="Describe what to avoid (objects to remove)"
+                )
+                
+                st.sidebar.info("🎯 **Object Removal Mode**: Optimized for removing watermarks and objects")
+                
+            else:  # text-guided
+                inpaint_params['prompt'] = st.sidebar.text_area(
+                    "Positive Prompt",
+                    value="high quality, detailed, clean, professional photo",
+                    help="Describe the desired result quality and characteristics"
+                )
+                
+                inpaint_params['negative_prompt'] = st.sidebar.text_area(
+                    "Negative Prompt",
+                    value="watermark, logo, text, signature, blurry, low quality, artifacts, distorted, deformed",
+                    help="Describe what to avoid in the result"
+                )
+            
+            inpaint_params['num_inference_steps'] = st.sidebar.slider(
+                "Inference Steps", 10, 100, 50, 5,
+                help="More steps = higher quality but slower"
             )
-        else:
-            # 为其他策略设置默认值
-            inpaint_params['hd_strategy_crop_margin'] = 64
-            inpaint_params['hd_strategy_crop_trigger_size'] = 800
-        
-        # 只在RESIZE策略下显示Resize Limit
-        if inpaint_params['hd_strategy'] == "RESIZE":
-            inpaint_params['hd_strategy_resize_limit'] = st.sidebar.slider(
-                "Resize Limit", 512, 2048, 1600, 64,
-                help="调整尺寸上限"
+            
+            inpaint_params['guidance_scale'] = st.sidebar.slider(
+                "Guidance Scale", 1.0, 20.0, 7.5, 0.5,
+                help="Higher values = more prompt adherence (recommend 7.5+ for object removal)"
             )
-        else:
-            inpaint_params['hd_strategy_resize_limit'] = 1600
+            
+            inpaint_params['strength'] = st.sidebar.slider(
+                "Strength", 0.1, 1.0, 1.0, 0.05,
+                help="How much to change the masked area (1.0 = full change)"
+            )
+            
+            # High-resolution processing
+            st.sidebar.write("**High-Resolution Processing:**")
+            
+            inpaint_params['crop_trigger_size'] = st.sidebar.slider(
+                "Crop Trigger Size", 256, 1024, 512, 64,
+                help="Images larger than this will use crop strategy"
+            )
+            
+            inpaint_params['crop_margin'] = st.sidebar.slider(
+                "Crop Margin", 32, 128, 64, 16,
+                help="Extra margin around mask regions when cropping"
+            )
+            
+            inpaint_params['resize_to_512'] = st.sidebar.checkbox(
+                "Resize crops to 512px", True,
+                help="Resize crop regions to optimal size for SD1.5"
+            )
+            
+            inpaint_params['blend_edges'] = st.sidebar.checkbox(
+                "Blend edges", True,
+                help="Smooth blending of processed regions"
+            )
+            
+            if inpaint_params['blend_edges']:
+                inpaint_params['edge_feather'] = st.sidebar.slider(
+                    "Edge Feather", 1, 15, 5, 1,
+                    help="Edge feathering strength for blending"
+                )
+            else:
+                inpaint_params['edge_feather'] = 0
         
+        else:
+            # LaMA specific parameters
+            st.sidebar.write("**LaMA Parameters:**")
+            
+            inpaint_params['prompt'] = ""  # LaMA doesn't use prompts
+            st.sidebar.info("ℹ️ LaMA model doesn't use text prompts")
+            
+            inpaint_params['ldm_steps'] = st.sidebar.slider(
+                "LDM Steps", 10, 200, 50, 10,
+                help="扩散模型步数，更多步数=更高质量"
+            )
+            
+            inpaint_params['ldm_sampler'] = st.sidebar.selectbox(
+                "LDM Sampler",
+                ["ddim", "plms"],
+                help="采样器选择"
+            )
+            
+            inpaint_params['hd_strategy'] = st.sidebar.selectbox(
+                "HD Strategy",
+                ["CROP", "RESIZE", "ORIGINAL"],
+                help="高分辨率处理策略"
+            )
+            
+            # 只在CROP策略下显示Crop Margin
+            if inpaint_params['hd_strategy'] == "CROP":
+                inpaint_params['hd_strategy_crop_margin'] = st.sidebar.slider(
+                    "Crop Margin", 32, 256, 64, 16,
+                    help="分块处理边距"
+                )
+                inpaint_params['hd_strategy_crop_trigger_size'] = st.sidebar.slider(
+                    "Crop Trigger Size", 512, 2048, 800, 64,
+                    help="触发分块处理的最小尺寸"
+                )
+            else:
+                # 为其他策略设置默认值
+                inpaint_params['hd_strategy_crop_margin'] = 64
+                inpaint_params['hd_strategy_crop_trigger_size'] = 800
+            
+            # 只在RESIZE策略下显示Resize Limit
+            if inpaint_params['hd_strategy'] == "RESIZE":
+                inpaint_params['hd_strategy_resize_limit'] = st.sidebar.slider(
+                    "Resize Limit", 512, 2048, 1600, 64,
+                    help="调整尺寸上限"
+                )
+            else:
+                inpaint_params['hd_strategy_resize_limit'] = 1600
+        
+        # Common parameters
         inpaint_params['seed'] = st.sidebar.number_input(
             "Seed", -1, 999999, -1,
             help="随机种子（-1为随机）"
@@ -265,29 +359,48 @@ class MainInterface:
             
             with col2:
                 st.write("**Inpainting:**")
-                for key, value in inpaint_params.items():
-                    if key == 'prompt' and not value:
-                        continue
-                    # 特殊处理策略相关参数显示
-                    if key.startswith('hd_strategy_') and inpaint_params['hd_strategy'] == 'ORIGINAL':
-                        if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
-                            st.write(f"{key}: {value} *(不适用于ORIGINAL策略)*")
-                        elif key == 'hd_strategy_resize_limit':
-                            st.write(f"{key}: {value} *(不适用于ORIGINAL策略)*")
+                st.write(f"Model: {inpaint_params.get('inpaint_model', 'lama')}")
+                
+                # Show relevant parameters based on model type
+                if inpaint_params.get('inpaint_model') == 'powerpaint':
+                    # PowerPaint parameters
+                    key_params = ['num_inference_steps', 'guidance_scale', 'strength', 
+                                'crop_trigger_size', 'crop_margin', 'seed']
+                    for key in key_params:
+                        if key in inpaint_params:
+                            st.write(f"{key}: {inpaint_params[key]}")
+                    
+                    if inpaint_params.get('prompt'):
+                        st.write(f"prompt: {inpaint_params['prompt'][:30]}...")
+                    if inpaint_params.get('negative_prompt'):
+                        st.write(f"negative_prompt: {inpaint_params['negative_prompt'][:30]}...")
+                else:
+                    # LaMA parameters
+                    for key, value in inpaint_params.items():
+                        if key in ['inpaint_model', 'prompt', 'negative_prompt']:
+                            continue
+                        if key == 'prompt' and not value:
+                            continue
+                        # 特殊处理策略相关参数显示
+                        if key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'ORIGINAL':
+                            if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
+                                st.write(f"{key}: {value} *(不适用于ORIGINAL策略)*")
+                            elif key == 'hd_strategy_resize_limit':
+                                st.write(f"{key}: {value} *(不适用于ORIGINAL策略)*")
+                            else:
+                                st.write(f"{key}: {value}")
+                        elif key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'RESIZE':
+                            if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
+                                st.write(f"{key}: {value} *(不适用于RESIZE策略)*")
+                            else:
+                                st.write(f"{key}: {value}")
+                        elif key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'CROP':
+                            if key == 'hd_strategy_resize_limit':
+                                st.write(f"{key}: {value} *(不适用于CROP策略)*")
+                            else:
+                                st.write(f"{key}: {value}")
                         else:
                             st.write(f"{key}: {value}")
-                    elif key.startswith('hd_strategy_') and inpaint_params['hd_strategy'] == 'RESIZE':
-                        if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
-                            st.write(f"{key}: {value} *(不适用于RESIZE策略)*")
-                        else:
-                            st.write(f"{key}: {value}")
-                    elif key.startswith('hd_strategy_') and inpaint_params['hd_strategy'] == 'CROP':
-                        if key == 'hd_strategy_resize_limit':
-                            st.write(f"{key}: {value} *(不适用于CROP策略)*")
-                        else:
-                            st.write(f"{key}: {value}")
-                    else:
-                        st.write(f"{key}: {value}")
             
             with col3:
                 st.write("**Performance:**")
@@ -374,10 +487,15 @@ class MainInterface:
         # 显示生成的mask
         if result.mask_image:
             self._render_mask_section(result.mask_image, filename)
+        else:
+            st.warning("⚠️ No mask was generated")
         
         # 下载选项
-        st.subheader("📥 Download Results")
-        self._render_download_section(result.result_image, filename)
+        if result.result_image:
+            st.subheader("📥 Download Results")
+            self._render_download_section(result.result_image, filename)
+        else:
+            st.warning("⚠️ No result image available for download")
     
     def _render_mask_section(self, mask_image, filename):
         """渲染mask部分"""
