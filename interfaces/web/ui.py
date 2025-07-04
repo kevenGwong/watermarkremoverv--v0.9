@@ -113,103 +113,77 @@ class ParameterPanel:
         st.sidebar.subheader("🎨 Inpainting Parameters")
         inpaint_params = {}
         
-        # Inpainting model selection
+        # Inpainting model selection - 新的IOPaint模型
         inpaint_model = st.sidebar.selectbox(
             "Inpainting Model",
-            ["powerpaint", "lama"],  # 将 PowerPaint 设为第一个选项
-            index=0,  # 默认选择 PowerPaint
-            format_func=lambda x: "PowerPaint (Object Removal)" if x == "powerpaint" else "LaMA (Fast)",
-            help="Choose inpainting model: PowerPaint for object removal, LaMA for speed"
+            ["iopaint", "lama"],
+            index=0,  # 默认选择 IOPaint
+            format_func=lambda x: "IOPaint (ZITS/MAT/FCF)" if x == "iopaint" else "LaMA (Fast)",
+            help="Choose inpainting model: IOPaint supports ZITS/MAT/FCF models, LaMA for speed"
         )
         inpaint_params['inpaint_model'] = inpaint_model
         
-        if inpaint_model == "powerpaint":
-            # PowerPaint specific parameters
-            st.sidebar.write("**PowerPaint Object Removal Parameters:**")
+        if inpaint_model == "iopaint":
+            # IOPaint specific parameters
+            st.sidebar.write("**IOPaint Model Parameters:**")
             
-            # Task selection for PowerPaint
-            task_type = st.sidebar.selectbox(
-                "PowerPaint Task",
-                ["object-removal", "text-guided"],
-                format_func=lambda x: "Object Removal" if x == "object-removal" else "Text Guided",
-                help="PowerPaint task type: Object removal for watermarks, Text guided for custom content"
-            )
-            inpaint_params['task'] = task_type
-            
-            if task_type == "object-removal":
-                # Object removal specific prompts
-                inpaint_params['prompt'] = st.sidebar.text_area(
-                    "Positive Prompt",
-                    value="empty scene blur, clean background, natural environment",
-                    help="Describe the background to fill the removed area"
-                )
-                
-                inpaint_params['negative_prompt'] = st.sidebar.text_area(
-                    "Negative Prompt",
-                    value="object, person, animal, vehicle, building, text, watermark, logo, worst quality, low quality, normal quality, bad quality, blurry, artifacts",
-                    help="Describe what to avoid (objects to remove)"
-                )
-                
-                st.sidebar.info("🎯 **Object Removal Mode**: Optimized for removing watermarks and objects")
-                
-            else:  # text-guided
-                inpaint_params['prompt'] = st.sidebar.text_area(
-                    "Positive Prompt",
-                    value="high quality, detailed, clean, professional photo",
-                    help="Describe the desired result quality and characteristics"
-                )
-                
-                inpaint_params['negative_prompt'] = st.sidebar.text_area(
-                    "Negative Prompt",
-                    value="watermark, logo, text, signature, blurry, low quality, artifacts, distorted, deformed",
-                    help="Describe what to avoid in the result"
-                )
-            
-            inpaint_params['num_inference_steps'] = st.sidebar.slider(
-                "Inference Steps", 10, 100, 50, 5,
-                help="More steps = higher quality but slower"
+            # 具体模型选择
+            specific_model = st.sidebar.selectbox(
+                "Specific Model",
+                ["auto", "zits", "mat", "fcf", "lama"],
+                index=0,
+                help="auto: 智能选择最佳模型 | zits: 最佳结构保持 | mat: 最佳质量 | fcf: 快速修复 | lama: 最快速度"
             )
             
-            inpaint_params['guidance_scale'] = st.sidebar.slider(
-                "Guidance Scale", 1.0, 20.0, 7.5, 0.5,
-                help="Higher values = more prompt adherence (recommend 7.5+ for object removal)"
-            )
-            
-            inpaint_params['strength'] = st.sidebar.slider(
-                "Strength", 0.1, 1.0, 1.0, 0.05,
-                help="How much to change the masked area (1.0 = full change)"
-            )
-            
-            # High-resolution processing
-            st.sidebar.write("**High-Resolution Processing:**")
-            
-            inpaint_params['crop_trigger_size'] = st.sidebar.slider(
-                "Crop Trigger Size", 256, 1024, 512, 64,
-                help="Images larger than this will use crop strategy"
-            )
-            
-            inpaint_params['crop_margin'] = st.sidebar.slider(
-                "Crop Margin", 32, 128, 64, 16,
-                help="Extra margin around mask regions when cropping"
-            )
-            
-            inpaint_params['resize_to_512'] = st.sidebar.checkbox(
-                "Resize crops to 512px", True,
-                help="Resize crop regions to optimal size for SD1.5"
-            )
-            
-            inpaint_params['blend_edges'] = st.sidebar.checkbox(
-                "Blend edges", True,
-                help="Smooth blending of processed regions"
-            )
-            
-            if inpaint_params['blend_edges']:
-                inpaint_params['edge_feather'] = st.sidebar.slider(
-                    "Edge Feather", 1, 15, 5, 1,
-                    help="Edge feathering strength for blending"
-                )
+            if specific_model != "auto":
+                inpaint_params['force_model'] = specific_model
+                inpaint_params['auto_model_selection'] = False
             else:
-                inpaint_params['edge_feather'] = 0
+                inpaint_params['auto_model_selection'] = True
+            
+            # IOPaint通用参数
+            st.sidebar.write("**Processing Parameters:**")
+            
+            inpaint_params['ldm_steps'] = st.sidebar.slider(
+                "LDM Steps", 10, 100, 50, 5,
+                help="扩散模型步数，更多步数=更高质量但更慢"
+            )
+            
+            inpaint_params['hd_strategy'] = st.sidebar.selectbox(
+                "HD Strategy",
+                ["CROP", "RESIZE", "ORIGINAL"],
+                index=0,
+                help="高分辨率处理策略: CROP=分块处理, RESIZE=缩放处理, ORIGINAL=原图处理"
+            )
+            
+            # 根据策略显示相关参数
+            if inpaint_params['hd_strategy'] == "CROP":
+                inpaint_params['hd_strategy_crop_margin'] = st.sidebar.slider(
+                    "Crop Margin", 32, 128, 64, 16,
+                    help="分块处理时的边距"
+                )
+                inpaint_params['hd_strategy_crop_trigger_size'] = st.sidebar.slider(
+                    "Crop Trigger Size", 512, 2048, 1024, 64,
+                    help="触发分块处理的最小尺寸"
+                )
+            elif inpaint_params['hd_strategy'] == "RESIZE":
+                inpaint_params['hd_strategy_resize_limit'] = st.sidebar.slider(
+                    "Resize Limit", 512, 2048, 2048, 64,
+                    help="调整尺寸的上限"
+                )
+            
+            # 模型选择提示
+            st.sidebar.info(f"📍 **当前选择**: {specific_model}")
+            if specific_model == "auto":
+                st.sidebar.write("智能选择将根据图像复杂度和mask覆盖率自动选择最佳模型")
+            else:
+                model_descriptions = {
+                    "zits": "最佳结构保持，适合复杂图像",
+                    "mat": "最佳质量，适合大水印",
+                    "fcf": "快速修复，平衡性能",
+                    "lama": "最快速度，适合小水印"
+                }
+                st.sidebar.write(f"**{model_descriptions.get(specific_model, '')}**")
         
         else:
             # LaMA specific parameters
@@ -329,6 +303,13 @@ class MainInterface:
             # 显示参数总结
             self._render_parameter_summary(mask_model, mask_params, inpaint_params, performance_params, transparent)
             
+            # 显示当前选择的模型
+            if inpaint_params.get('inpaint_model') == 'iopaint':
+                selected_model = inpaint_params.get('force_model', 'auto')
+                st.info(f"🎯 **当前选择的模型**: IOPaint - {selected_model.upper()}")
+            else:
+                st.info(f"🎯 **当前选择的模型**: {inpaint_params.get('inpaint_model', 'lama').upper()}")
+            
             # 处理按钮
             self._render_process_button(inference_manager, original_image, mask_model, 
                                       mask_params, inpaint_params, performance_params, transparent)
@@ -339,9 +320,6 @@ class MainInterface:
             elif processing_result and not processing_result.success:
                 st.error(f"❌ Processing failed: {processing_result.error_message}")
         else:
-            # 显示参数面板但不处理
-            self.parameter_panel.render()
-            
             # 显示使用说明
             st.info("📸 Please upload an image to start debugging watermark removal parameters.")
             self._render_usage_guide()
@@ -362,18 +340,25 @@ class MainInterface:
                 st.write(f"Model: {inpaint_params.get('inpaint_model', 'lama')}")
                 
                 # Show relevant parameters based on model type
-                if inpaint_params.get('inpaint_model') == 'powerpaint':
-                    # PowerPaint parameters
-                    key_params = ['num_inference_steps', 'guidance_scale', 'strength', 
-                                'crop_trigger_size', 'crop_margin', 'seed']
+                if inpaint_params.get('inpaint_model') == 'iopaint':
+                    # IOPaint parameters
+                    key_params = ['ldm_steps', 'hd_strategy', 'auto_model_selection']
                     for key in key_params:
                         if key in inpaint_params:
                             st.write(f"{key}: {inpaint_params[key]}")
                     
-                    if inpaint_params.get('prompt'):
-                        st.write(f"prompt: {inpaint_params['prompt'][:30]}...")
-                    if inpaint_params.get('negative_prompt'):
-                        st.write(f"negative_prompt: {inpaint_params['negative_prompt'][:30]}...")
+                    # Show forced model if specified
+                    if inpaint_params.get('force_model'):
+                        st.write(f"force_model: {inpaint_params['force_model']}")
+                    
+                    # Show strategy-specific params
+                    if inpaint_params.get('hd_strategy') == 'CROP':
+                        for key in ['hd_strategy_crop_margin', 'hd_strategy_crop_trigger_size']:
+                            if key in inpaint_params:
+                                st.write(f"{key}: {inpaint_params[key]}")
+                    elif inpaint_params.get('hd_strategy') == 'RESIZE':
+                        if 'hd_strategy_resize_limit' in inpaint_params:
+                            st.write(f"hd_strategy_resize_limit: {inpaint_params['hd_strategy_resize_limit']}")
                 else:
                     # LaMA parameters
                     for key, value in inpaint_params.items():
@@ -414,24 +399,26 @@ class MainInterface:
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             if st.button("🚀 Process with Debug Parameters", type="primary", use_container_width=True):
+                # 清除之前的结果
+                if 'processing_result' in st.session_state:
+                    del st.session_state.processing_result
+                
                 with st.spinner("Processing with debug parameters..."):
-                    # 确保使用正确的处理器
-                    if hasattr(inference_manager, 'enhanced_processor') and inference_manager.enhanced_processor is not None:
-                        processor = inference_manager
+                    # 直接使用inference_manager
+                    if inference_manager is not None:
+                        result = inference_manager.process_image(
+                            image=original_image,
+                            mask_model=mask_model,
+                            mask_params=mask_params,
+                            inpaint_params=inpaint_params,
+                            performance_params=performance_params,
+                            transparent=transparent
+                        )
+                        st.session_state.processing_result = result
+                        st.rerun()
                     else:
                         st.error("❌ Processor not loaded. Please refresh the page.")
                         return
-                    
-                    result = processor.process_image(
-                        image=original_image,
-                        mask_model=mask_model,
-                        mask_params=mask_params,
-                        inpaint_params=inpaint_params,
-                        performance_params=performance_params,
-                        transparent=transparent
-                    )
-                    st.session_state.processing_result = result
-                    st.rerun()
     
     def _render_results(self, result, original_image, transparent, filename):
         """渲染结果"""

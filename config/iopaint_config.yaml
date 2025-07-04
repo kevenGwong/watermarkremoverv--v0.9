@@ -1,0 +1,117 @@
+# IOPaint统一配置文件
+# 修改版本：支持ZITS、MAT、FCF + LaMA
+app:
+  title: "AI Watermark Remover - IOPaint Edition"
+  host: "0.0.0.0"
+  port: 8501
+  debug: false
+
+# 处理选项
+processing:
+  default_max_bbox_percent: 10.0
+  default_transparent: false
+  default_overwrite: false
+  default_force_format: "PNG"
+  supported_formats: ["jpg", "jpeg", "png", "webp"]
+
+# Mask生成器配置 (保持不变)
+mask_generator:
+  model_type: "custom"
+  mask_model_path: "./data/models/epoch=071-valid_iou=0.7267.ckpt"
+  image_size: 768
+  imagenet_mean: [0.485, 0.456, 0.406]
+  imagenet_std: [0.229, 0.224, 0.225]
+  mask_threshold: 0.5
+  mask_dilate_kernel_size: 3
+  mask_dilate_iterations: 1
+  
+# Florence-2配置 (保留UI，即使接口有问题)
+florence:
+  model_name: "microsoft/Florence-2-large"
+  trust_remote_code: true
+  prompt: "watermark"
+  task: "object_detection"
+  enabled: true  # 保持启用状态，UI会显示
+
+# IOPaint模型配置
+models:
+  # 默认inpainting模型
+  default_inpainting: "mat"
+  
+  # 支持的模型列表（按用户需求）
+  available_models:
+    - "zits"     # 最佳结构保持，适合复杂图像  
+    - "mat"      # 最佳质量，适合大水印
+    - "fcf"      # 快速修复，平衡性能
+    - "lama"     # 最快速度，适合小水印
+  
+  # 智能模型选择
+  auto_model_selection: true
+  
+  # 模型选择策略
+  selection_strategy:
+    large_watermark_threshold: 30    # 大于30%使用MAT
+    complex_image_threshold: 0.7     # 复杂度大于0.7使用ZITS
+    small_watermark_threshold: 5     # 小于5%使用LaMA
+    default_model: "fcf"             # 中等情况使用FCF
+
+# IOPaint处理配置
+iopaint_config:
+  # 高分辨率处理策略
+  hd_strategy: "CROP"                    # CROP, RESIZE, ORIGINAL
+  hd_strategy_crop_margin: 64
+  hd_strategy_crop_trigger_size: 1024     # 高清处理优化
+  hd_strategy_resize_limit: 2048
+  
+  # LDM参数 (适用于某些模型)
+  ldm_steps: 50
+  ldm_sampler: "ddim"
+  
+  # 性能配置
+  enable_gpu_optimization: true
+  clear_cache_after_processing: true
+
+# 文件处理
+files:
+  max_upload_size: 20  # MB
+  temp_dir: "./temp"
+  output_dir: "./data/output"
+  allowed_extensions: [".jpg", ".jpeg", ".png", ".webp"]
+
+# UI配置 (关键：支持3种mask生成方式)
+ui:
+  # Mask生成选项
+  mask_generation_options:
+    - "custom"     # 自定义模型生成mask
+    - "florence"   # Florence-2生成mask（保留UI）
+    - "upload"     # 手动上传mask（必须保留）
+  
+  # 模型选择器
+  show_model_selector: true
+  show_advanced_options: true
+  show_auto_selection: true
+  default_download_format: "png"
+  
+  # 参数范围
+  parameter_ranges:
+    ldm_steps: [10, 100]
+    crop_trigger_size: [512, 2048]
+    crop_margin: [32, 128]
+  
+  # 模型描述（用于UI显示）
+  model_descriptions:
+    zits: "最佳结构保持，适合复杂图像"
+    mat: "最佳质量，适合大水印"
+    fcf: "快速修复，平衡性能"
+    lama: "最快速度，适合小水印"
+
+# 性能监控
+performance:
+  log_processing_time: true
+  log_memory_usage: true
+  log_model_switches: true
+
+# 日志配置
+logging:
+  level: "INFO"
+  format: "%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d - %(message)s"

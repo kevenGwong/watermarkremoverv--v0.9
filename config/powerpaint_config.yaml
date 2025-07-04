@@ -57,10 +57,11 @@ powerpaint_config:
   default_prompt: "high quality, detailed, clean, professional photo, realistic, sharp"
   default_negative_prompt: "watermark, logo, text, signature, blurry, low quality, artifacts, distorted, deformed, noise, oversaturated"
   
-  # High-Resolution Processing
-  crop_trigger_size: 512                      # Images larger than this use crop strategy
+  # 🎯 High-Resolution Processing - 高清修复优化
+  crop_trigger_size: 1024                     # 提高到1024，减少不必要的crop
   crop_margin: 64                             # Margin around mask regions
-  resize_to_512: true                         # Resize crops to optimal SD1.5 size
+  preserve_original_resolution: true          # 🎯 保持原始分辨率
+  high_quality_resize: true                   # 🎯 高质量resize
   
   # Blending Settings
   blend_edges: true                           # Smooth edge blending
@@ -128,6 +129,7 @@ advanced:
   clear_cache_after_processing: true
   max_concurrent_processes: 1
   
-  # Quality settings
-  preserve_original_resolution: true
-  use_high_quality_resize: true
+  # 🎯 Quality settings - 高清修复优化
+  preserve_original_resolution: true          # 保持原始分辨率
+  use_high_quality_resize: true               # 高质量resize
+  avoid_unnecessary_resize: true              # 避免不必要的resize操作

@@ -3,7 +3,7 @@ Core models module for AI watermark removal
 """
 
 from .base_model import BaseModel
-from .powerpaint_processor import PowerPaintProcessor
+from .iopaint_processor import IOPaintProcessor
 from .lama_processor import LamaProcessor
 
-__all__ = ['BaseModel', 'PowerPaintProcessor', 'LamaProcessor']
+__all__ = ['BaseModel', 'IOPaintProcessor', 'LamaProcessor']

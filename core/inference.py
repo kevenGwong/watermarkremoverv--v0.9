@@ -15,7 +15,7 @@ from pathlib import Path
 
 from core.utils.image_utils import ImageProcessor
 from core.models.lama_processor import LamaProcessor
-from core.models.powerpaint_processor import PowerPaintProcessor
+from core.models.iopaint_processor import IOPaintProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -219,6 +219,9 @@ class WatermarkProcessor:
         self.config_path = config_path
         self.config = self._load_config(config_path)
         self._resources = []  # Track resources for cleanup
+        
+        # Initialize components
+        self._init_components()
     
     def __enter__(self):
         """Context manager entry"""
@@ -241,15 +244,13 @@ class WatermarkProcessor:
                 self.mask_generator.cleanup_resources()
             
             # Clear CUDA cache
+            import torch
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 
             logger.info("✅ WatermarkProcessor resources cleaned up")
         except Exception as e:
             logger.warning(f"⚠️ Error during WatermarkProcessor cleanup: {e}")
-    
-        # Initialize components
-        self._init_components()
     
     def _init_components(self):
         """Initialize processor components"""
@@ -416,35 +417,38 @@ class WatermarkProcessor:
         return info
 
 class EnhancedWatermarkProcessor:
-    """增强的水印处理器 - 支持 PowerPaint"""
+    """增强的水印处理器 - 支持 IOPaint"""
     
     def __init__(self, base_processor: WatermarkProcessor):
         self.base_processor = base_processor
-        self.powerpaint_processor = None
-        self._load_powerpaint_processor()
+        self.iopaint_processor = None
+        self._load_iopaint_processor()
     
-    def _load_powerpaint_processor(self):
-        """Load PowerPaint processor"""
+    def _load_iopaint_processor(self):
+        """Load IOPaint processor"""
         try:
-            # Create PowerPaint config
+            # Create IOPaint config
             config = {
                 'models': {
-                    'powerpaint_model_path': './models/powerpaint_v2_real/realisticVisionV60B1_v51VAE'
+                    'inpaint_model': 'mat',  # 默认使用MAT
+                    'available_models': ['zits', 'mat', 'fcf', 'lama']
                 },
-                'powerpaint_config': {
-                    'use_fp16': True,
-                    'enable_attention_slicing': True,
-                    'enable_memory_efficient_attention': True,
-                    'enable_vae_slicing': False
+                'iopaint_config': {
+                    'hd_strategy': 'CROP',
+                    'hd_strategy_crop_margin': 64,
+                    'hd_strategy_crop_trigger_size': 1024,
+                    'hd_strategy_resize_limit': 2048,
+                    'ldm_steps': 50,
+                    'auto_model_selection': True
                 }
             }
             
-            self.powerpaint_processor = PowerPaintProcessor(config)
-            logger.info("PowerPaint processor loaded successfully")
+            self.iopaint_processor = IOPaintProcessor(config)
+            logger.info("✅ IOPaint processor loaded successfully")
             
         except Exception as e:
-            logger.warning(f"PowerPaint processor loading failed: {e}")
-            logger.info("PowerPaint functionality will not be available")
+            logger.warning(f"IOPaint processor loading failed: {e}")
+            logger.info("IOPaint functionality will not be available")
     
     def process_image_with_params(self, 
                                 image: Image.Image,
@@ -483,9 +487,9 @@ class EnhancedWatermarkProcessor:
             else:
                 inpaint_model = inpaint_params.get('inpaint_model', 'lama')
                 
-                if inpaint_model == 'powerpaint' and self.powerpaint_processor and self.powerpaint_processor.model_loaded:
-                    logger.info("🎨 应用PowerPaint处理...")
-                    result_array = self.powerpaint_processor.predict(image, mask_image, inpaint_params)
+                if inpaint_model == 'iopaint' and self.iopaint_processor and self.iopaint_processor.model_loaded:
+                    logger.info("🎨 应用IOPaint处理...")
+                    result_array = self.iopaint_processor.predict(image, mask_image, inpaint_params)
                     result_image = Image.fromarray(result_array)
                 else:
                     logger.info("🎨 应用LaMA处理...")
@@ -530,6 +534,9 @@ class EnhancedWatermarkProcessor:
                 # Streamlit UploadedFile对象
                 uploaded_mask.seek(0)  # 重置文件指针
                 mask = Image.open(uploaded_mask)
+            elif isinstance(uploaded_mask, Image.Image):
+                # 已经是PIL Image对象
+                mask = uploaded_mask
             else:
                 # 文件路径
                 mask = Image.open(uploaded_mask)
