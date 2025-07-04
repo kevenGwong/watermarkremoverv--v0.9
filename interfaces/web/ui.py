@@ -13,6 +13,7 @@ from PIL import Image
 
 from config.config import ConfigManager
 from core.utils.image_utils import ImageProcessor, ImageDownloader, ImageValidator
+from core.inference import process_image, get_system_info
 
 class ParameterPanel:
     """参数面板"""
@@ -404,9 +405,9 @@ class MainInterface:
                     del st.session_state.processing_result
                 
                 with st.spinner("Processing with debug parameters..."):
-                    # 直接使用inference_manager
-                    if inference_manager is not None:
-                        result = inference_manager.process_image(
+                    # 使用新的模块化接口
+                    try:
+                        result = process_image(
                             image=original_image,
                             mask_model=mask_model,
                             mask_params=mask_params,
@@ -416,8 +417,8 @@ class MainInterface:
                         )
                         st.session_state.processing_result = result
                         st.rerun()
-                    else:
-                        st.error("❌ Processor not loaded. Please refresh the page.")
+                    except Exception as e:
+                        st.error(f"❌ Processing failed: {str(e)}")
                         return
     
     def _render_results(self, result, original_image, transparent, filename):

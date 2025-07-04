@@ -18,7 +18,7 @@ from PIL import Image
 # 导入模块
 from config.config import ConfigManager
 from interfaces.web.ui import MainInterface
-from core.inference import InferenceManager
+from core.inference import get_inference_manager, get_system_info
 
 # 配置页面
 def setup_page_config(config_manager):
@@ -48,12 +48,13 @@ def init_session_state():
         st.session_state.original_image = None
 
 # 加载处理器
-def load_processor(inference_manager):
+def load_processor():
     """加载处理器"""
     if st.session_state.processor is None:
         with st.spinner("Loading AI models..."):
             try:
-                if inference_manager.load_processor():
+                inference_manager = get_inference_manager()
+                if inference_manager is not None:
                     st.session_state.processor = inference_manager
                     st.success("✅ AI models loaded successfully!")
                     return True
@@ -85,15 +86,11 @@ def main():
     # 初始化session state
     init_session_state()
     
-    # 初始化推理管理器
-    config_path = config_manager.config_file if hasattr(config_manager, 'config_file') else None
-    inference_manager = InferenceManager(config_manager, config_path)
-    
     # 初始化主界面
     main_interface = MainInterface(config_manager)
     
     # 加载处理器
-    if not load_processor(inference_manager):
+    if not load_processor():
         st.error("❌ Failed to initialize AI models. Please check:")
         st.error("1. Model files exist in the correct paths")
         st.error("2. Dependencies are properly installed") 
@@ -102,7 +99,7 @@ def main():
     
     # 渲染主界面
     main_interface.render(
-        inference_manager=get_processor() or inference_manager,
+        inference_manager=get_processor(),
         processing_result=st.session_state.processing_result
     )
     

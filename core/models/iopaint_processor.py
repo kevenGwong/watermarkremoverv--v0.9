@@ -4,12 +4,20 @@ IOPaint统一处理器
 修改版本：按用户需求支持ZITS、MAT、FCF + LaMA
 """
 
-import torch
 import numpy as np
 from PIL import Image
 from typing import Dict, Any, Optional, Union
 import logging
 from pathlib import Path
+
+# 尝试导入torch，如果失败则提供降级方案
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.warning("⚠️ PyTorch not available, IOPaint functionality will be limited")
 
 from .base_model import BaseModel
 
@@ -73,7 +81,8 @@ class IOPaintProcessor(BaseModel):
             # 清理旧模型
             if self.model_manager:
                 del self.model_manager
-                torch.cuda.empty_cache()  # 清理GPU内存
+                if TORCH_AVAILABLE and torch.cuda.is_available():
+                    torch.cuda.empty_cache()  # 清理GPU内存
                 
             # 加载新模型
             self.model_manager = ModelManager(name=model_name, device=str(self.device))

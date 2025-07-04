@@ -1,6 +1,7 @@
 """
-LaMA处理器模块
-负责LaMA模型的加载和inpainting处理
+MAT处理器模块
+负责MAT模型的加载和inpainting处理
+MAT: Mask-Aware Transformer for Large Hole Image Inpainting
 """
 
 import logging
@@ -13,8 +14,8 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-class LamaProcessor:
-    """LaMA inpainting处理器"""
+class MatProcessor:
+    """MAT inpainting处理器"""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
@@ -24,67 +25,40 @@ class LamaProcessor:
         self._load_model()
     
     def _load_model(self):
-        """加载LaMA模型"""
+        """加载MAT模型"""
         try:
             import torch
             import cv2
-            from saicinpainting.evaluation.data import pad_img_to_modulo
-            from saicinpainting.evaluation.utils import move_to_device
-            from saicinpainting.evaluation.data import load_image, load_mask, get_img
-            from saicinpainting.training.trainers import load_checkpoint
+            from iopaint.model_manager import ModelManager
+            from iopaint.schema import HDStrategy, LDMSampler, InpaintRequest as Config
             
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             
-            # 获取模型配置
-            model_config = self.config.get('models', {})
-            model_path = model_config.get('lama_model', 'lama')
+            # 加载MAT模型
+            self.model_manager = ModelManager(name="mat", device=str(self.device))
             
-            # 加载模型
-            train_config_path = Path(model_path) / 'config.yaml'
-            model_path = Path(model_path) / 'models' / 'best.ckpt'
+            # 存储配置类
+            self.HDStrategy = HDStrategy
+            self.LDMSampler = LDMSampler
+            self.Config = Config
             
-            if not model_path.exists():
-                logger.error(f"LaMA model not found: {model_path}")
-                raise FileNotFoundError(f"LaMA model not found: {model_path}")
-            
-            with open(train_config_path, 'r') as f:
-                train_config = yaml.safe_load(f)
-            
-            train_config['model']['input_channels'] = 4
-            train_config['model']['output_channels'] = 3
-            
-            # 创建模型
-            from saicinpainting.training.data.datasets import make_default_val_dataset
-            from saicinpainting.training.models import make_model
-            
-            model = make_model(train_config['model'], kind='inpainting')
-            model.to(self.device)
-            
-            # 加载checkpoint
-            checkpoint = load_checkpoint(train_config, model_path, strict=False, map_location='cpu')
-            model.load_state_dict(checkpoint['state_dict'], strict=False)
-            model.eval()
-            
-            self.model = model
             self.model_loaded = True
-            logger.info(f"✅ LaMA model loaded from: {model_path}")
+            logger.info(f"✅ MAT model loaded successfully")
+            logger.info(f"   Device: {self.device}")
             
         except Exception as e:
-            logger.error(f"❌ Failed to load LaMA model: {e}")
+            logger.error(f"❌ Failed to load MAT model: {e}")
             self.model = None
             self.model_loaded = False
     
     def predict(self, image: Image.Image, mask: Image.Image, config: Dict[str, Any] = None) -> np.ndarray:
-        """使用LaMA进行inpainting"""
+        """使用MAT进行inpainting"""
         if not self.model_loaded:
-            raise RuntimeError("LaMA model not loaded")
+            raise RuntimeError("MAT model not loaded")
         
         try:
             import torch
             import cv2
-            from saicinpainting.evaluation.data import pad_img_to_modulo
-            from saicinpainting.evaluation.utils import move_to_device
-            from saicinpainting.evaluation.data import load_image, load_mask, get_img
             
             # 使用默认配置或自定义配置
             if config is None:
@@ -118,36 +92,37 @@ class LamaProcessor:
                 image_array = cv2.resize(image_array, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
                 mask_array = cv2.resize(mask_array, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
             
-            # 准备输入
-            img = torch.from_numpy(image_array).permute(2, 0, 1).unsqueeze(0).float() / 255.0
-            mask = torch.from_numpy(mask_array).unsqueeze(0).unsqueeze(0).float() / 255.0
+            logger.info(f"🎨 MAT processing: {image_array.shape}")
             
-            # 移动到设备
-            img = move_to_device(img, self.device)
-            mask = move_to_device(mask, self.device)
+            # 构建IOPaint配置
+            strategy_map = {
+                'CROP': self.HDStrategy.CROP,
+                'RESIZE': self.HDStrategy.RESIZE,
+                'ORIGINAL': self.HDStrategy.ORIGINAL
+            }
             
-            # 填充到模型要求的尺寸
-            img = pad_img_to_modulo(img, mod=8)
-            mask = pad_img_to_modulo(mask, mod=8)
+            iopaint_config = self.Config(
+                ldm_steps=ldm_steps,
+                ldm_sampler=self.LDMSampler.ddim,
+                hd_strategy=strategy_map.get(hd_strategy, self.HDStrategy.CROP),
+                hd_strategy_crop_margin=hd_strategy_crop_margin,
+                hd_strategy_crop_trigger_size=hd_strategy_crop_trigger_size,
+                hd_strategy_resize_limit=hd_strategy_resize_limit,
+            )
             
-            # 模型推理
-            with torch.no_grad():
-                inpainted = self.model(img, mask)
-                inpainted = torch.clamp(inpainted, 0, 1)
-            
-            # 后处理
-            inpainted = inpainted.cpu().permute(0, 2, 3, 1).numpy()[0]
-            inpainted = (inpainted * 255).astype(np.uint8)
+            # 执行MAT inpainting
+            result = self.model_manager(image_array, mask_array, iopaint_config)
             
             # 恢复原始尺寸
-            if inpainted.shape[:2] != image_array.shape[:2]:
-                inpainted = cv2.resize(inpainted, (image_array.shape[1], image_array.shape[0]), 
-                                     interpolation=cv2.INTER_LINEAR)
+            if result.shape[:2] != image_array.shape[:2]:
+                result = cv2.resize(result, (image_array.shape[1], image_array.shape[0]), 
+                                  interpolation=cv2.INTER_LINEAR)
             
-            return inpainted
+            logger.info(f"✅ MAT processing completed")
+            return result
             
         except Exception as e:
-            logger.error(f"LaMA prediction failed: {e}")
+            logger.error(f"MAT prediction failed: {e}")
             raise
     
     def _crop_for_inpainting(self, image: np.ndarray, mask: np.ndarray, margin: int) -> tuple:
@@ -183,17 +158,15 @@ class LamaProcessor:
     def cleanup_resources(self):
         """清理资源"""
         try:
-            if self.model is not None:
-                if hasattr(self.model, 'cpu'):
-                    self.model.cpu()
-                del self.model
-            self.model = None
+            if self.model_manager is not None:
+                del self.model_manager
+            self.model_manager = None
             self.model_loaded = False
             
             import torch
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 
-            logger.info("✅ LaMA processor resources cleaned up")
+            logger.info("✅ MAT processor resources cleaned up")
         except Exception as e:
-            logger.warning(f"⚠️ Error during LaMA processor cleanup: {e}")
+            logger.warning(f"⚠️ Error during MAT processor cleanup: {e}") 
