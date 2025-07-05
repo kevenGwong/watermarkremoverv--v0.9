@@ -192,47 +192,47 @@ class ParameterPanel:
             
             inpaint_params['prompt'] = ""  # LaMA doesn't use prompts
             st.sidebar.info("ℹ️ LaMA model doesn't use text prompts")
-            
-            inpaint_params['ldm_steps'] = st.sidebar.slider(
-                "LDM Steps", 10, 200, 50, 10,
-                help="扩散模型步数，更多步数=更高质量"
+        
+        inpaint_params['ldm_steps'] = st.sidebar.slider(
+            "LDM Steps", 10, 200, 50, 10,
+            help="扩散模型步数，更多步数=更高质量"
+        )
+        
+        inpaint_params['ldm_sampler'] = st.sidebar.selectbox(
+            "LDM Sampler",
+            ["ddim", "plms"],
+            help="采样器选择"
+        )
+        
+        inpaint_params['hd_strategy'] = st.sidebar.selectbox(
+            "HD Strategy",
+            ["CROP", "RESIZE", "ORIGINAL"],
+            help="高分辨率处理策略"
+        )
+        
+        # 只在CROP策略下显示Crop Margin
+        if inpaint_params['hd_strategy'] == "CROP":
+            inpaint_params['hd_strategy_crop_margin'] = st.sidebar.slider(
+                "Crop Margin", 32, 256, 64, 16,
+                help="分块处理边距"
             )
-            
-            inpaint_params['ldm_sampler'] = st.sidebar.selectbox(
-                "LDM Sampler",
-                ["ddim", "plms"],
-                help="采样器选择"
+            inpaint_params['hd_strategy_crop_trigger_size'] = st.sidebar.slider(
+                "Crop Trigger Size", 512, 2048, 800, 64,
+                help="触发分块处理的最小尺寸"
             )
-            
-            inpaint_params['hd_strategy'] = st.sidebar.selectbox(
-                "HD Strategy",
-                ["CROP", "RESIZE", "ORIGINAL"],
-                help="高分辨率处理策略"
+        else:
+            # 为其他策略设置默认值
+            inpaint_params['hd_strategy_crop_margin'] = 64
+            inpaint_params['hd_strategy_crop_trigger_size'] = 800
+        
+        # 只在RESIZE策略下显示Resize Limit
+        if inpaint_params['hd_strategy'] == "RESIZE":
+            inpaint_params['hd_strategy_resize_limit'] = st.sidebar.slider(
+                "Resize Limit", 512, 2048, 1600, 64,
+                help="调整尺寸上限"
             )
-            
-            # 只在CROP策略下显示Crop Margin
-            if inpaint_params['hd_strategy'] == "CROP":
-                inpaint_params['hd_strategy_crop_margin'] = st.sidebar.slider(
-                    "Crop Margin", 32, 256, 64, 16,
-                    help="分块处理边距"
-                )
-                inpaint_params['hd_strategy_crop_trigger_size'] = st.sidebar.slider(
-                    "Crop Trigger Size", 512, 2048, 800, 64,
-                    help="触发分块处理的最小尺寸"
-                )
-            else:
-                # 为其他策略设置默认值
-                inpaint_params['hd_strategy_crop_margin'] = 64
-                inpaint_params['hd_strategy_crop_trigger_size'] = 800
-            
-            # 只在RESIZE策略下显示Resize Limit
-            if inpaint_params['hd_strategy'] == "RESIZE":
-                inpaint_params['hd_strategy_resize_limit'] = st.sidebar.slider(
-                    "Resize Limit", 512, 2048, 1600, 64,
-                    help="调整尺寸上限"
-                )
-            else:
-                inpaint_params['hd_strategy_resize_limit'] = 1600
+        else:
+            inpaint_params['hd_strategy_resize_limit'] = 1600
         
         # Common parameters
         inpaint_params['seed'] = st.sidebar.number_input(
@@ -362,31 +362,31 @@ class MainInterface:
                             st.write(f"hd_strategy_resize_limit: {inpaint_params['hd_strategy_resize_limit']}")
                 else:
                     # LaMA parameters
-                    for key, value in inpaint_params.items():
+                for key, value in inpaint_params.items():
                         if key in ['inpaint_model', 'prompt', 'negative_prompt']:
                             continue
-                        if key == 'prompt' and not value:
-                            continue
-                        # 特殊处理策略相关参数显示
+                    if key == 'prompt' and not value:
+                        continue
+                    # 特殊处理策略相关参数显示
                         if key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'ORIGINAL':
-                            if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
-                                st.write(f"{key}: {value} *(不适用于ORIGINAL策略)*")
-                            elif key == 'hd_strategy_resize_limit':
-                                st.write(f"{key}: {value} *(不适用于ORIGINAL策略)*")
-                            else:
-                                st.write(f"{key}: {value}")
-                        elif key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'RESIZE':
-                            if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
-                                st.write(f"{key}: {value} *(不适用于RESIZE策略)*")
-                            else:
-                                st.write(f"{key}: {value}")
-                        elif key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'CROP':
-                            if key == 'hd_strategy_resize_limit':
-                                st.write(f"{key}: {value} *(不适用于CROP策略)*")
-                            else:
-                                st.write(f"{key}: {value}")
+                        if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
+                            st.write(f"{key}: {value} *(不适用于ORIGINAL策略)*")
+                        elif key == 'hd_strategy_resize_limit':
+                            st.write(f"{key}: {value} *(不适用于ORIGINAL策略)*")
                         else:
                             st.write(f"{key}: {value}")
+                        elif key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'RESIZE':
+                        if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
+                            st.write(f"{key}: {value} *(不适用于RESIZE策略)*")
+                        else:
+                            st.write(f"{key}: {value}")
+                        elif key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'CROP':
+                        if key == 'hd_strategy_resize_limit':
+                            st.write(f"{key}: {value} *(不适用于CROP策略)*")
+                        else:
+                            st.write(f"{key}: {value}")
+                    else:
+                        st.write(f"{key}: {value}")
             
             with col3:
                 st.write("**Performance:**")
@@ -408,15 +408,15 @@ class MainInterface:
                     # 使用新的模块化接口
                     try:
                         result = process_image(
-                            image=original_image,
-                            mask_model=mask_model,
-                            mask_params=mask_params,
-                            inpaint_params=inpaint_params,
-                            performance_params=performance_params,
-                            transparent=transparent
-                        )
-                        st.session_state.processing_result = result
-                        st.rerun()
+                        image=original_image,
+                        mask_model=mask_model,
+                        mask_params=mask_params,
+                        inpaint_params=inpaint_params,
+                        performance_params=performance_params,
+                        transparent=transparent
+                    )
+                    st.session_state.processing_result = result
+                    st.rerun()
                     except Exception as e:
                         st.error(f"❌ Processing failed: {str(e)}")
                         return
@@ -480,8 +480,8 @@ class MainInterface:
         
         # 下载选项
         if result.result_image:
-            st.subheader("📥 Download Results")
-            self._render_download_section(result.result_image, filename)
+        st.subheader("📥 Download Results")
+        self._render_download_section(result.result_image, filename)
         else:
             st.warning("⚠️ No result image available for download")
     

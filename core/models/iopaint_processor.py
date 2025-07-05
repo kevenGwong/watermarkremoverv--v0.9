@@ -82,7 +82,7 @@ class IOPaintProcessor(BaseModel):
             if self.model_manager:
                 del self.model_manager
                 if TORCH_AVAILABLE and torch.cuda.is_available():
-                    torch.cuda.empty_cache()  # 清理GPU内存
+                torch.cuda.empty_cache()  # 清理GPU内存
                 
             # 加载新模型
             self.model_manager = ModelManager(name=model_name, device=str(self.device))

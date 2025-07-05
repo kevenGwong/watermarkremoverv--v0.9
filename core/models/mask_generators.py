@@ -174,6 +174,10 @@ class FlorenceMaskGenerator:
             self.florence_model = None
             self.florence_processor = None
     
+    def is_available(self) -> bool:
+        """检查Florence-2模型是否可用"""
+        return self.florence_model is not None and self.florence_processor is not None
+    
     def generate_mask(self, image: Image.Image, mask_params: Dict[str, Any] = None) -> Image.Image:
         """使用Florence-2生成mask"""
         if self.florence_model is None:

@@ -116,7 +116,10 @@ class InferenceManager:
     def _generate_mask(self, image: Image.Image, mask_model: str, mask_params: Dict[str, Any]) -> Image.Image:
         """生成mask"""
         try:
-            if mask_model == "florence" and self.florence_mask_generator.is_available():
+            if mask_model == "upload":
+                # 处理上传的mask
+                return self._handle_uploaded_mask(image, mask_params)
+            elif mask_model == "florence" and hasattr(self.florence_mask_generator, 'is_available') and self.florence_mask_generator.is_available():
                 return self.florence_mask_generator.generate_mask(image, mask_params)
             elif mask_model == "custom":
                 return self.custom_mask_generator.generate_mask(image, mask_params)
@@ -124,6 +127,52 @@ class InferenceManager:
                 return self.fallback_mask_generator.generate_mask(image, mask_params)
         except Exception as e:
             logger.warning(f"Mask generation failed: {e}")
+            return self.fallback_mask_generator.generate_mask(image, mask_params)
+    
+    def _handle_uploaded_mask(self, image: Image.Image, mask_params: Dict[str, Any]) -> Image.Image:
+        """处理上传的mask"""
+        try:
+            uploaded_mask = mask_params.get('uploaded_mask')
+            if uploaded_mask is None:
+                logger.warning("No uploaded mask found")
+                return self.fallback_mask_generator.generate_mask(image, mask_params)
+            
+            # 如果是PIL Image，直接使用
+            if isinstance(uploaded_mask, Image.Image):
+                mask = uploaded_mask.convert('L')
+            else:
+                # 如果是文件对象，读取并解析
+                if hasattr(uploaded_mask, 'read'):
+                    mask_data = uploaded_mask.read()
+                    if isinstance(mask_data, bytes):
+                        from io import BytesIO
+                        mask = Image.open(BytesIO(mask_data)).convert('L')
+                    else:
+                        mask = uploaded_mask.convert('L')
+                else:
+                    logger.warning(f"Unknown uploaded mask type: {type(uploaded_mask)}")
+                    return self.fallback_mask_generator.generate_mask(image, mask_params)
+            
+            # 确保mask尺寸与图像匹配
+            if mask.size != image.size:
+                mask = mask.resize(image.size, Image.NEAREST)
+            
+            # 应用膨胀处理
+            dilate_kernel_size = mask_params.get('mask_dilate_kernel_size', 0)
+            dilate_iterations = mask_params.get('mask_dilate_iterations', 0)
+            
+            if dilate_kernel_size > 0 and dilate_iterations > 0:
+                import cv2
+                mask_array = np.array(mask)
+                kernel = np.ones((dilate_kernel_size, dilate_kernel_size), np.uint8)
+                mask_array = cv2.dilate(mask_array, kernel, iterations=dilate_iterations)
+                mask = Image.fromarray(mask_array, mode='L')
+            
+            logger.info(f"✅ Uploaded mask processed successfully: {mask.size}")
+            return mask
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to process uploaded mask: {e}")
             return self.fallback_mask_generator.generate_mask(image, mask_params)
     
     def _make_transparent(self, image: Image.Image, mask: Image.Image) -> Image.Image:
