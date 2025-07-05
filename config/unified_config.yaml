@@ -1,0 +1,185 @@
+# WatermarkRemover-AI Unified Configuration
+# SIMP-LAMA Architecture - Consolidated config for all models
+# Generated: 2025-07-05
+
+# Application Settings
+app:
+  title: "AI Watermark Remover - SIMP-LAMA Edition"
+  host: "0.0.0.0"
+  port: 8501
+  debug: false
+
+# Core Processing Configuration
+processing:
+  default_max_bbox_percent: 10.0
+  default_overwrite: false
+  default_force_format: "PNG"
+  supported_formats: ["jpg", "jpeg", "png", "webp"]
+  enable_gpu_optimization: true
+  clear_cache_after_processing: true
+
+# Mask Generation Configuration
+mask_generator:
+  # Model options: "custom" or "upload" (Florence-2 removed in SIMP-LAMA)
+  model_type: "custom"
+  mask_model_path: "/home/duolaameng/SAM_Remove/Watermark_sam/output/checkpoints/epoch=071-valid_iou=0.7267.ckpt"
+  
+  # Custom model parameters
+  image_size: 768
+  imagenet_mean: [0.485, 0.456, 0.406]
+  imagenet_std: [0.229, 0.224, 0.225]
+  mask_threshold: 0.5
+  mask_dilate_kernel_size: 3
+  mask_dilate_iterations: 1
+  
+  # Upload mode parameters
+  upload_additional_dilate: 5
+  upload_dilate_iterations: 2
+
+# Model Registry and Selection
+models:
+  # Available inpainting models
+  available_models: ["mat", "zits", "fcf", "lama"]
+  default_model: "mat"
+  
+  # Auto model selection
+  auto_model_selection: true
+  selection_strategy:
+    large_watermark_threshold: 30     # >30% coverage -> MAT
+    complex_image_threshold: 0.7      # High complexity -> ZITS
+    small_watermark_threshold: 5      # <5% coverage -> LaMA
+    default_model: "fcf"              # Medium cases -> FCF
+
+# Model-Specific Configurations
+model_configs:
+  # MAT - Best quality for large watermarks
+  mat:
+    description: "最佳质量，适合大水印"
+    ldm_steps: 50
+    ldm_sampler: "ddim"
+    hd_strategy: "CROP"
+    hd_strategy_crop_margin: 64
+    hd_strategy_crop_trigger_size: 1024
+    hd_strategy_resize_limit: 2048
+    enable_mixed_precision: true
+    
+  # ZITS - Best structure preservation for complex images
+  zits:
+    description: "最佳结构保持，适合复杂图像"
+    ldm_steps: 50
+    ldm_sampler: "ddim" 
+    hd_strategy: "CROP"
+    hd_strategy_crop_margin: 64
+    hd_strategy_crop_trigger_size: 1024
+    hd_strategy_resize_limit: 2048
+    enable_mixed_precision: true
+    
+  # FCF - Fast and balanced
+  fcf:
+    description: "快速修复，平衡性能"
+    ldm_steps: 40
+    ldm_sampler: "ddim"
+    hd_strategy: "CROP"
+    hd_strategy_crop_margin: 64
+    hd_strategy_crop_trigger_size: 1024
+    hd_strategy_resize_limit: 2048
+    enable_mixed_precision: true
+    
+  # LaMA - Fastest processing
+  lama:
+    description: "最快速度，适合小水印"
+    ldm_steps: 50
+    ldm_sampler: "ddim"
+    hd_strategy: "CROP"
+    hd_strategy_crop_margin: 64
+    hd_strategy_crop_trigger_size: 800
+    hd_strategy_resize_limit: 1600
+    enable_mixed_precision: true
+    
+    # LaMA-specific settings
+    saicinpainting_available: null  # Auto-detect
+    fallback_to_iopaint: true
+
+# UI Configuration (Simplified)
+ui:
+  # Core options
+  mask_generation_options: ["custom", "upload"]
+  show_model_selector: true
+  show_advanced_options: false  # Simplified UI
+  default_download_format: "png"
+  
+  # Simplified parameter ranges
+  parameter_ranges:
+    ldm_steps: [10, 100]
+    crop_trigger_size: [512, 2048] 
+    crop_margin: [32, 128]
+    mask_threshold: [0.3, 0.8]
+    mask_dilate_kernel_size: [1, 20]
+    seed: [-1, 999999]
+  
+  # Model descriptions for UI display
+  model_descriptions:
+    mat: "最佳质量，适合大水印"
+    zits: "最佳结构保持，适合复杂图像"
+    fcf: "快速修复，平衡性能"
+    lama: "最快速度，适合小水印"
+
+# File Handling
+files:
+  max_upload_size: 20  # MB
+  temp_dir: "./temp"
+  output_dir: "./data/output"
+  allowed_extensions: [".jpg", ".jpeg", ".png", ".webp"]
+
+# Performance and Memory Management
+performance:
+  log_processing_time: true
+  log_memory_usage: true
+  log_model_switches: true
+  enable_mixed_precision: true
+  max_concurrent_processes: 1
+  
+  # Memory management
+  auto_cleanup_unused_models: true
+  memory_check_interval: 30  # seconds
+  gpu_memory_threshold: 0.8  # 80% usage triggers cleanup
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d - %(message)s"
+  log_model_operations: true
+  log_memory_operations: true
+
+# Advanced Settings (Hidden from UI)
+advanced:
+  # Model switching
+  model_switch_timeout: 30  # seconds
+  enable_model_warmup: false
+  
+  # Quality settings
+  preserve_original_resolution: true
+  use_high_quality_resize: true
+  avoid_unnecessary_resize: true
+  
+  # Fallback behavior
+  enable_model_fallback: true
+  fallback_order: ["fcf", "mat", "lama"]
+  
+  # Memory optimization
+  enable_attention_slicing: true
+  enable_memory_efficient_attention: true
+  torch_compile_optimization: false
+
+# Legacy Support (For backward compatibility)
+legacy:
+  # Removed features (will be ignored)
+  florence_model: null  # Removed in SIMP-LAMA
+  transparent_mode: null  # Removed in SIMP-LAMA
+  powerpaint_config: null  # Not used in current architecture
+  
+  # Mapping old parameters to new ones
+  parameter_mapping:
+    "inpaint_model": "default_model"
+    "mask_model": "mask_generator.model_type"
+    "hd_strategy_resize": "ORIGINAL"  # RESIZE removed, map to ORIGINAL

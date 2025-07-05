@@ -36,10 +36,10 @@ class AppConfig:
     default_resize_limit: int = 1600
 
 class ConfigManager:
-    """配置管理器"""
+    """配置管理器 - SIMP-LAMA统一配置"""
     
     def __init__(self, config_file: Optional[str] = None):
-        self.config_file = config_file or "web_config.yaml"
+        self.config_file = config_file or "config/unified_config.yaml"
         self.app_config = AppConfig()
         self._load_config()
     
@@ -58,16 +58,27 @@ class ConfigManager:
             self.config = self._get_default_config()
     
     def _get_default_config(self) -> Dict[str, Any]:
-        """获取默认配置"""
+        """获取默认配置 - SIMP-LAMA统一架构"""
         return {
+            "app": {
+                "title": "AI Watermark Remover - SIMP-LAMA Edition",
+                "host": "0.0.0.0",
+                "port": 8501
+            },
             "models": {
-                "lama_model": "lama"
+                "available_models": ["mat", "zits", "fcf", "lama"],
+                "default_model": "mat"
             },
             "mask_generator": {
-                "model_type": "custom"
+                "model_type": "custom",
+                "mask_threshold": 0.5,
+                "mask_dilate_kernel_size": 3
             },
-            "interfaces": {
-                "web": {"port": 8501, "host": "localhost"}
+            "model_configs": {
+                "mat": {"ldm_steps": 50, "hd_strategy": "CROP"},
+                "zits": {"ldm_steps": 50, "hd_strategy": "CROP"},
+                "fcf": {"ldm_steps": 40, "hd_strategy": "CROP"},
+                "lama": {"ldm_steps": 50, "hd_strategy": "CROP"}
             }
         }
     
@@ -82,6 +93,27 @@ class ConfigManager:
     def get_mask_config(self) -> Dict[str, Any]:
         """获取mask生成器配置"""
         return self.config.get("mask_generator", {})
+    
+    def get_model_specific_config(self, model_name: str) -> Dict[str, Any]:
+        """获取特定模型的配置"""
+        model_configs = self.config.get("model_configs", {})
+        return model_configs.get(model_name, {})
+    
+    def get_available_models(self) -> list:
+        """获取可用模型列表"""
+        return self.config.get("models", {}).get("available_models", ["mat", "zits", "fcf", "lama"])
+    
+    def get_default_model(self) -> str:
+        """获取默认模型"""
+        return self.config.get("models", {}).get("default_model", "mat")
+    
+    def get_ui_config(self) -> Dict[str, Any]:
+        """获取UI配置"""
+        return self.config.get("ui", {})
+    
+    def get_performance_config(self) -> Dict[str, Any]:
+        """获取性能配置"""
+        return self.config.get("performance", {})
     
     def validate_mask_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """验证mask参数"""
@@ -104,118 +136,103 @@ class ConfigManager:
         
         return validated
     
-    def validate_inpaint_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """验证inpainting参数"""
+    def validate_inpaint_params(self, params: Dict[str, Any], model_name: str = None) -> Dict[str, Any]:
+        """验证inpainting参数 - SIMP-LAMA统一验证"""
         validated = params.copy()
         
-        model_type = validated.get('inpaint_model', 'lama')
+        # 获取模型名称
+        if model_name is None:
+            model_name = validated.get('inpaint_model', self.get_default_model())
         
-        if model_type == 'iopaint':
-            # IOPaint parameter validation
-            if 'ldm_steps' in validated:
-                validated['ldm_steps'] = max(10, min(100, validated['ldm_steps']))
-            
-            # 验证HD策略
-            if 'hd_strategy' in validated:
-                if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
-                    validated['hd_strategy'] = 'CROP'
-            
-            # 验证模型选择
-            if 'force_model' in validated:
-                available_models = ['zits', 'mat', 'fcf', 'lama']
-                if validated['force_model'] not in available_models:
-                    del validated['force_model']  # 移除无效模型
-            
-            # 验证自动选择
-            validated['auto_model_selection'] = bool(validated.get('auto_model_selection', True))
-            
-            # 验证crop参数
-            if 'hd_strategy_crop_margin' in validated:
-                validated['hd_strategy_crop_margin'] = max(32, min(128, validated['hd_strategy_crop_margin']))
-            
-            if 'hd_strategy_crop_trigger_size' in validated:
-                validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
-            
-            # 验证resize参数
-            if 'hd_strategy_resize_limit' in validated:
-                validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
-            
-        else:
-            # LaMA parameter validation
-            if 'ldm_steps' in validated:
-                validated['ldm_steps'] = max(10, min(200, validated['ldm_steps']))
-            
-            # 验证采样器
-            if 'ldm_sampler' in validated:
-                if validated['ldm_sampler'] not in ['ddim', 'plms']:
-                    validated['ldm_sampler'] = 'ddim'
-            
-            # 验证HD策略
-            if 'hd_strategy' in validated:
-                if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
-                    validated['hd_strategy'] = 'CROP'
-            
-            # 验证crop参数
-            if 'hd_strategy_crop_margin' in validated:
-                validated['hd_strategy_crop_margin'] = max(32, min(256, validated['hd_strategy_crop_margin']))
-            
-            if 'hd_strategy_crop_trigger_size' in validated:
-                validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
-            
-            # 验证resize参数
-            if 'hd_strategy_resize_limit' in validated:
-                validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+        # 验证模型名称
+        available_models = self.get_available_models()
+        if model_name not in available_models:
+            model_name = self.get_default_model()
+            validated['inpaint_model'] = model_name
+        
+        # 验证步数
+        if 'ldm_steps' in validated:
+            validated['ldm_steps'] = max(10, min(100, validated['ldm_steps']))
+        
+        # 验证HD策略 (SIMP-LAMA: 移除RESIZE，只支持CROP和ORIGINAL)
+        if 'hd_strategy' in validated:
+            if validated['hd_strategy'] not in ['CROP', 'ORIGINAL']:
+                validated['hd_strategy'] = 'CROP'
+        
+        # 验证采样器
+        if 'ldm_sampler' in validated:
+            if validated['ldm_sampler'] not in ['ddim', 'plms']:
+                validated['ldm_sampler'] = 'ddim'
+        
+        # 验证crop参数
+        if 'hd_strategy_crop_margin' in validated:
+            validated['hd_strategy_crop_margin'] = max(32, min(128, validated['hd_strategy_crop_margin']))
+        
+        if 'hd_strategy_crop_trigger_size' in validated:
+            validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+        
+        # 验证种子
+        if 'seed' in validated:
+            if validated['seed'] < -1 or validated['seed'] > 999999:
+                validated['seed'] = -1
+        
+        # 应用模型特定配置
+        model_config = self.get_model_specific_config(model_name)
+        for key, value in model_config.items():
+            if key not in validated:
+                validated[key] = value
         
         return validated
     
     def get_default_mask_params(self, model_type: str) -> Dict[str, Any]:
-        """获取默认mask参数"""
+        """获取默认mask参数 - SIMP-LAMA统一配置"""
+        mask_config = self.get_mask_config()
+        
         if model_type == "custom":
             return {
-                'mask_threshold': self.app_config.default_mask_threshold,
-                'mask_dilate_kernel_size': self.app_config.default_dilate_kernel_size,
-                'mask_dilate_iterations': self.app_config.default_dilate_iterations
-            }
-        elif model_type == "florence2":
-            return {
+                'mask_threshold': mask_config.get('mask_threshold', 0.5),
+                'mask_dilate_kernel_size': mask_config.get('mask_dilate_kernel_size', 3),
+                'mask_dilate_iterations': mask_config.get('mask_dilate_iterations', 1),
                 'detection_prompt': 'watermark',
-                'max_bbox_percent': self.app_config.default_max_bbox_percent,
+                'max_bbox_percent': 10.0,
                 'confidence_threshold': 0.3
             }
-        else:  # upload
+        else:  # upload (florence2 removed in SIMP-LAMA)
             return {
                 'uploaded_mask': None,
-                'mask_dilate_kernel_size': 0
+                'mask_dilate_kernel_size': mask_config.get('upload_additional_dilate', 5),
+                'mask_dilate_iterations': mask_config.get('upload_dilate_iterations', 2)
             }
     
-    def get_default_inpaint_params(self, model_type: str = "lama") -> Dict[str, Any]:
-        """获取默认inpainting参数"""
-        if model_type == "iopaint":
-            return {
-                'inpaint_model': 'iopaint',
-                'auto_model_selection': True,
-                'ldm_steps': 50,
-                'hd_strategy': 'CROP',
-                'hd_strategy_crop_margin': 64,
-                'hd_strategy_crop_trigger_size': 1024,
-                'hd_strategy_resize_limit': 2048,
-                'seed': -1
-            }
-        else:
-            return {
-                'inpaint_model': 'lama',
-                'ldm_steps': self.app_config.default_ldm_steps,
-                'ldm_sampler': self.app_config.default_ldm_sampler,
-                'hd_strategy': self.app_config.default_hd_strategy,
-                'hd_strategy_crop_margin': self.app_config.default_crop_margin,
-                'hd_strategy_crop_trigger_size': self.app_config.default_crop_trigger_size,
-                'hd_strategy_resize_limit': self.app_config.default_resize_limit,
-                'seed': -1
-            }
+    def get_default_inpaint_params(self, model_name: str = None) -> Dict[str, Any]:
+        """获取默认inpainting参数 - SIMP-LAMA统一配置"""
+        if model_name is None:
+            model_name = self.get_default_model()
+        
+        # 获取模型特定配置
+        model_config = self.get_model_specific_config(model_name)
+        
+        # 基础默认参数
+        base_params = {
+            'inpaint_model': model_name,
+            'ldm_steps': 50,
+            'ldm_sampler': 'ddim',
+            'hd_strategy': 'CROP',
+            'hd_strategy_crop_margin': 64,
+            'hd_strategy_crop_trigger_size': 1024,
+            'seed': -1
+        }
+        
+        # 合并模型特定配置
+        base_params.update(model_config)
+        
+        return base_params
     
     def get_default_performance_params(self) -> Dict[str, Any]:
-        """获取默认性能参数"""
+        """获取默认性能参数 - SIMP-LAMA统一配置"""
+        performance_config = self.get_performance_config()
         return {
-            'mixed_precision': True,
-            'log_processing_time': True
+            'mixed_precision': performance_config.get('enable_mixed_precision', True),
+            'log_processing_time': performance_config.get('log_processing_time', True),
+            'log_memory_usage': performance_config.get('log_memory_usage', True)
         } 

@@ -1,6 +1,6 @@
 """
-Mask生成器模块
-包含自定义mask生成器和Florence-2 mask生成器
+简化的Mask生成器模块
+移除Florence-2相关复杂性，专注于自定义mask生成
 """
 
 import time
@@ -50,26 +50,25 @@ class CustomMaskGenerator:
             self.model = WMModel(freeze_encoder=False).to(self.device)
             
             # 加载checkpoint
-            mask_config = self.config['mask_generator']
-            ckpt_path = mask_config['mask_model_path']
+            mask_config = self.config.get('mask_generator', {})
+            ckpt_path = mask_config.get('mask_model_path')
             
-            if not Path(ckpt_path).exists():
-                logger.error(f"Custom mask model not found: {ckpt_path}")
-                logger.error("Custom mask generation will not be available")
+            if not ckpt_path or not Path(ckpt_path).exists():
+                logger.warning(f"Custom mask model not found: {ckpt_path}")
+                logger.warning("Custom mask generation will use fallback")
                 self.model = None
-                raise FileNotFoundError(f"Custom mask model not found: {ckpt_path}")
+                return
                 
             ckpt = torch.load(ckpt_path, map_location=self.device)
             state_dict = {k.replace("net.", ""): v for k, v in ckpt["state_dict"].items() if k.startswith("net.")}
             self.model.net.load_state_dict(state_dict)
             self.model.eval()
             
-            # Setup preprocessing
-            mask_config = self.config['mask_generator']
-            self.image_size = mask_config['image_size']
-            self.imagenet_mean = mask_config['imagenet_mean']
-            self.imagenet_std = mask_config['imagenet_std']
-            self.mask_threshold = mask_config['mask_threshold']
+            # Setup preprocessing with defaults
+            self.image_size = mask_config.get('image_size', 768)
+            self.imagenet_mean = mask_config.get('imagenet_mean', [0.485, 0.456, 0.406])
+            self.imagenet_std = mask_config.get('imagenet_std', [0.229, 0.224, 0.225])
+            self.mask_threshold = mask_config.get('mask_threshold', 0.5)
             
             self.aug_val = A.Compose([
                 A.LongestMaxSize(max_size=self.image_size),
@@ -82,29 +81,44 @@ class CustomMaskGenerator:
             
         except Exception as e:
             logger.error(f"❌ Failed to load custom mask model: {e}")
-            # Clean up any partially loaded resources
+            self._cleanup_model()
+    
+    def _cleanup_model(self):
+        """清理模型资源"""
+        try:
             if hasattr(self, 'model') and self.model is not None:
                 if hasattr(self.model, 'cpu'):
                     self.model.cpu()
                 del self.model
             self.model = None
+            
+            import torch
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
+        except Exception as e:
+            logger.warning(f"Error during model cleanup: {e}")
+    
+    def is_available(self) -> bool:
+        """检查自定义mask生成器是否可用"""
+        return self.model is not None
     
     def generate_mask(self, image: Image.Image, mask_params: Dict[str, Any] = None) -> Image.Image:
         """生成水印mask"""
-        if self.model is None:
-            logger.warning("Custom mask model not available, returning empty mask")
-            return Image.new('L', image.size, 0)
+        if not self.is_available():
+            logger.warning("Custom mask model not available, using fallback")
+            return self._generate_fallback_mask(image)
         
         try:
             import torch
             import cv2
             
             # 使用动态参数或默认值
-            mask_threshold = mask_params.get('mask_threshold', self.mask_threshold) if mask_params else self.mask_threshold
-            dilate_size = mask_params.get('mask_dilate_kernel_size', 3) if mask_params else 3
-            dilate_iterations = mask_params.get('mask_dilate_iterations', 1) if mask_params else 1
+            if mask_params is None:
+                mask_params = {}
+                
+            mask_threshold = mask_params.get('mask_threshold', self.mask_threshold)
+            dilate_size = mask_params.get('mask_dilate_kernel_size', 3)
+            dilate_iterations = mask_params.get('mask_dilate_iterations', 1)
             
             # 转换为numpy数组
             image_rgb = np.array(image.convert("RGB"))
@@ -137,73 +151,82 @@ class CustomMaskGenerator:
                 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilate_size, dilate_size))
                 binary_mask = cv2.dilate(binary_mask, kernel, iterations=dilate_iterations)
             
+            # 验证mask质量
+            mask_coverage = np.sum(binary_mask > 0) / (orig_w * orig_h) * 100
+            logger.info(f"🎭 Custom mask coverage: {mask_coverage:.2f}%")
+            
             return Image.fromarray(binary_mask, mode='L')
             
         except Exception as e:
             logger.error(f"Custom mask generation failed: {e}")
-            return Image.new('L', image.size, 0)
-
-class FlorenceMaskGenerator:
-    """Florence-2 mask生成器"""
+            return self._generate_fallback_mask(image)
     
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
-        self.florence_model = None
-        self.florence_processor = None
-        self._load_model()
-    
-    def _load_model(self):
-        """加载Florence-2模型"""
-        try:
-            import torch
-            from transformers import AutoProcessor, AutoModelForCausalLM
-            
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            model_name = self.config['models']['florence_model']
-            
-            self.florence_model = AutoModelForCausalLM.from_pretrained(
-                model_name, trust_remote_code=True
-            ).to(device).eval()
-            self.florence_processor = AutoProcessor.from_pretrained(
-                model_name, trust_remote_code=True
-            )
-            logger.info(f"✅ Florence-2 model loaded: {model_name}")
-            
-        except Exception as e:
-            logger.error(f"❌ Failed to load Florence-2 model: {e}")
-            self.florence_model = None
-            self.florence_processor = None
-    
-    def is_available(self) -> bool:
-        """检查Florence-2模型是否可用"""
-        return self.florence_model is not None and self.florence_processor is not None
-    
-    def generate_mask(self, image: Image.Image, mask_params: Dict[str, Any] = None) -> Image.Image:
-        """使用Florence-2生成mask"""
-        if self.florence_model is None:
-            logger.warning("Florence-2 model not available, returning empty mask")
-            return Image.new('L', image.size, 0)
+    def _generate_fallback_mask(self, image: Image.Image) -> Image.Image:
+        """生成降级mask - 简单的中心区域"""
+        logger.warning("Using fallback mask generation")
         
-        try:
-            # 获取参数
-            max_bbox_percent = mask_params.get('max_bbox_percent', 10.0) if mask_params else 10.0
-            detection_prompt = mask_params.get('detection_prompt', 'watermark') if mask_params else 'watermark'
-            
-            # TODO: 实现Florence-2检测逻辑
-            # 由于缺少utils模块，暂时返回空mask
-            logger.warning("Florence-2 detection logic not implemented yet")
-            return Image.new('L', image.size, 0)
-            
-        except Exception as e:
-            logger.error(f"Florence mask generation failed: {e}")
-            return Image.new('L', image.size, 0)
+        width, height = image.size
+        mask = Image.new('L', (width, height), 0)
+        
+        # 创建中心区域mask作为降级方案
+        center_x, center_y = width // 2, height // 2
+        mask_size = min(width, height) // 4
+        
+        import numpy as np
+        mask_array = np.array(mask)
+        
+        # 简单的椭圆形区域
+        y, x = np.ogrid[:height, :width]
+        ellipse_mask = ((x - center_x) ** 2 / (mask_size ** 2) + 
+                       (y - center_y) ** 2 / (mask_size ** 2)) <= 1
+        mask_array[ellipse_mask] = 255
+        
+        return Image.fromarray(mask_array, mode='L')
+    
+    def cleanup_resources(self):
+        """清理资源"""
+        self._cleanup_model()
+        logger.info("✅ CustomMaskGenerator resources cleaned up")
 
-class FallbackMaskGenerator:
-    """降级mask生成器"""
+class SimpleMaskGenerator:
+    """简单mask生成器 - 用于测试和降级场景"""
     
     def __init__(self, config: Dict[str, Any] = None):
-        self.config = config
+        self.config = config or {}
+    
+    def is_available(self) -> bool:
+        """始终可用"""
+        return True
     
     def generate_mask(self, image: Image.Image, mask_params: Dict[str, Any] = None) -> Image.Image:
-        logger.warning("Using fallback mask generator - returning empty mask")
-        return Image.new('L', image.size, 0) 
+        """生成简单的中心区域mask"""
+        width, height = image.size
+        mask = Image.new('L', (width, height), 0)
+        
+        # 获取参数
+        if mask_params is None:
+            mask_params = {}
+            
+        coverage_percent = mask_params.get('coverage_percent', 25)  # 默认覆盖25%
+        
+        import numpy as np
+        mask_array = np.array(mask)
+        
+        # 计算mask区域大小
+        area = width * height
+        target_area = area * coverage_percent / 100
+        radius = int(np.sqrt(target_area / np.pi))
+        
+        center_x, center_y = width // 2, height // 2
+        
+        # 创建圆形mask
+        y, x = np.ogrid[:height, :width]
+        circle_mask = (x - center_x) ** 2 + (y - center_y) ** 2 <= radius ** 2
+        mask_array[circle_mask] = 255
+        
+        logger.info(f"🎭 Simple mask generated: {coverage_percent}% coverage")
+        return Image.fromarray(mask_array, mode='L')
+    
+    def cleanup_resources(self):
+        """清理资源（无资源需要清理）"""
+        pass

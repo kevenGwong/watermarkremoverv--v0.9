@@ -161,6 +161,115 @@ class ImageDownloader:
         
         return download_info
 
+class ImageUtils:
+    """统一图像处理工具类 - 支持简化处理器"""
+    
+    @staticmethod
+    def preprocess_for_model(image: Image.Image, mask: Image.Image, model_name: str) -> Tuple[Image.Image, Image.Image]:
+        """为特定模型预处理图像和mask"""
+        # 标准预处理 - 所有模型都使用RGB格式的PIL图像
+        # 具体的颜色空间转换在各模型内部处理
+        processed_image = image.convert("RGB")
+        processed_mask = mask.convert("L")
+        
+        # 确保尺寸匹配
+        if processed_image.size != processed_mask.size:
+            processed_mask = processed_mask.resize(processed_image.size, Image.NEAREST)
+        
+        return processed_image, processed_mask
+    
+    @staticmethod
+    def prepare_arrays_for_iopaint(image: Image.Image, mask: Image.Image) -> Tuple[np.ndarray, np.ndarray]:
+        """为所有IOPaint模型（MAT/ZITS/FCF/LaMA）准备numpy数组"""
+        import cv2
+        
+        # IOPaint期望RGB格式的numpy数组
+        image_array = np.array(image.convert("RGB"))
+        mask_array = np.array(mask.convert("L"))
+        
+        # 确保mask是二值的
+        mask_array = (mask_array > 128).astype(np.uint8) * 255
+        
+        return image_array, mask_array
+    
+    
+    @staticmethod
+    def postprocess_result(result_array: np.ndarray, model_name: str, target_size: Tuple[int, int]) -> Image.Image:
+        """后处理模型输出结果"""
+        # 确保结果是uint8格式
+        if result_array.dtype != np.uint8:
+            result_array = np.clip(result_array * 255, 0, 255).astype(np.uint8)
+        
+        # 转换为PIL图像
+        if len(result_array.shape) == 3 and result_array.shape[2] == 3:
+            result_image = Image.fromarray(result_array, 'RGB')
+        else:
+            result_image = Image.fromarray(result_array)
+        
+        # 调整到目标尺寸
+        if result_image.size != target_size:
+            result_image = result_image.resize(target_size, Image.LANCZOS)
+        
+        return result_image
+    
+    @staticmethod
+    def process_uploaded_mask(uploaded_file, target_size: Tuple[int, int]) -> Image.Image:
+        """处理上传的mask文件"""
+        try:
+            # 读取上传的文件
+            if hasattr(uploaded_file, 'read'):
+                uploaded_file.seek(0)
+                mask_image = Image.open(uploaded_file)
+            elif isinstance(uploaded_file, Image.Image):
+                mask_image = uploaded_file
+            else:
+                mask_image = Image.open(uploaded_file)
+            
+            # 转换为灰度图像
+            mask_image = mask_image.convert('L')
+            
+            # 调整尺寸
+            if mask_image.size != target_size:
+                mask_image = mask_image.resize(target_size, Image.NEAREST)
+            
+            return mask_image
+            
+        except Exception as e:
+            logger.error(f"Failed to process uploaded mask: {e}")
+            raise ValueError(f"Invalid mask file: {e}")
+    
+    @staticmethod
+    def calculate_mask_coverage(mask: Image.Image) -> float:
+        """计算mask覆盖率"""
+        mask_array = np.array(mask.convert('L'))
+        white_pixels = np.sum(mask_array > 128)
+        total_pixels = mask_array.size
+        return (white_pixels / total_pixels) * 100
+    
+    @staticmethod
+    def validate_image_for_processing(image: Image.Image) -> bool:
+        """验证图像是否适合处理"""
+        try:
+            # 检查尺寸
+            if image.size[0] < 64 or image.size[1] < 64:
+                logger.warning("Image too small for processing")
+                return False
+            
+            if image.size[0] > 4096 or image.size[1] > 4096:
+                logger.warning("Image too large, may cause memory issues")
+                return False
+            
+            # 检查格式
+            if image.mode not in ['RGB', 'RGBA', 'L']:
+                logger.warning(f"Unsupported image mode: {image.mode}")
+                return False
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Image validation failed: {e}")
+            return False
+
 class ImageValidator:
     """图像验证器"""
     

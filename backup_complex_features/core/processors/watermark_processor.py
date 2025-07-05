@@ -11,7 +11,6 @@ from PIL import Image
 from pathlib import Path
 
 from .processing_result import ProcessingResult
-from ..models.mask_generators import CustomMaskGenerator, FlorenceMaskGenerator, FallbackMaskGenerator
 from ..models.lama_processor import LamaProcessor
 from ..models.iopaint_processor import IOPaintProcessor
 
@@ -67,7 +66,6 @@ class WatermarkProcessor:
             if mask_type == "custom":
                 self.mask_generator = CustomMaskGenerator(self.config)
             else:
-                self.mask_generator = FlorenceMaskGenerator(self.config)
         except Exception as e:
             logger.error(f"Failed to initialize mask generator: {e}")
             # 提供降级方案 - 使用基础的空mask生成器
@@ -109,7 +107,7 @@ class WatermarkProcessor:
                 'mask_threshold': config_manager.app_config.default_mask_threshold,
             },
             'models': {
-                'florence_model': 'microsoft/Florence-2-large',
+
                 'lama_model': config_manager.get_model_config().get('lama_model', 'lama')
             }
         }
@@ -263,7 +261,7 @@ class EnhancedWatermarkProcessor:
             # 生成mask
             if mask_model == "upload":
                 mask_image = self._generate_uploaded_mask(image, mask_params)
-            elif mask_model == "florence2":
+
                 mask_image = self.base_processor.mask_generator.generate_mask(image, mask_params)
             else:  # custom
                 mask_image = self.base_processor.mask_generator.generate_mask(image, mask_params)

@@ -47,17 +47,17 @@ def init_session_state():
     if 'original_image' not in st.session_state:
         st.session_state.original_image = None
     if 'last_parameters' not in st.session_state:
-        st.session_state.last_parameters = None
+        st.session_state.last_parameters = {}
     if 'current_parameters' not in st.session_state:
         st.session_state.current_parameters = None
 
 # 加载处理器
-def load_processor():
+def load_processor(config_manager):
     """加载处理器"""
     if st.session_state.processor is None:
         with st.spinner("Loading AI models..."):
             try:
-                inference_manager = get_inference_manager()
+                inference_manager = get_inference_manager(config_manager)
                 if inference_manager is not None:
                     st.session_state.processor = inference_manager
                     st.success("✅ AI models loaded successfully!")
@@ -94,7 +94,7 @@ def main():
     main_interface = MainInterface(config_manager)
     
     # 加载处理器
-    if not load_processor():
+    if not load_processor(config_manager):
         st.error("❌ Failed to initialize AI models. Please check:")
         st.error("1. Model files exist in the correct paths")
         st.error("2. Dependencies are properly installed") 

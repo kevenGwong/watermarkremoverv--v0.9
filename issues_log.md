@@ -343,3 +343,181 @@ if task == 'object-removal':
 - **功能验证**: 2025-01-04 18:25-18:30
 - **文档更新**: 2025-01-04 18:30-18:35
 - **状态**: ✅ 完成，PowerPaint v2 Real架构成功集成
+
+# WatermarkRemover-AI 问题记录与修复日志
+
+## 问题概述
+本文档记录了WatermarkRemover-AI项目中发现的关键问题、根本原因分析和修复方案。
+
+## 1. CUDA内存管理问题
+
+### 问题描述
+```
+Processing failed: CUDA out of memory. Tried to allocate 1.41 GiB. 
+GPU 0 has a total capacity of 14.58 GiB of which 1.24 GiB is free. 
+Including non-PyTorch memory, this process has 13.34 GiB memory in use. 
+Of the allocated memory 10.70 GiB is allocated by PyTorch, and 2.50 GiB is reserved by PyTorch but unallocated.
+```
+
+### 根本原因分析
+1. **模型切换时未清理显存**: 当前实现中，切换模型时没有正确清理之前模型的GPU内存
+2. **多个模型同时加载**: 系统同时加载了ZITS、MAT、FCF等多个模型，占用大量显存
+3. **内存碎片化**: PyTorch预留了2.50 GiB但未分配的内存，导致内存碎片化
+4. **缺乏显存管理策略**: 没有实现智能的显存管理和模型卸载机制
+
+### 影响范围
+- MAT模型处理大图像时容易OOM
+- 模型切换时显存累积，最终导致处理失败
+- 限制了同时可用的模型数量
+
+### 修复优先级: 🔴 高
+
+---
+
+## 2. LaMA模型加载失败
+
+### 问题描述
+```
+ERROR:core.models.lama_processor:❌ Failed to load LaMA model: No module named 'saicinpainting'
+```
+
+### 根本原因分析
+1. **依赖缺失**: `saicinpainting`模块未安装或版本不兼容
+2. **模块化设计问题**: LaMA处理器直接依赖saicinpainting，缺乏降级机制
+3. **配置问题**: 可能缺少LaMA模型文件或配置路径错误
+
+### 参考解决方案
+参考 [kevenGwong/watermarkremoverv--v0.9](https://github.com/kevenGwong/watermarkremoverv--v0.9/blob/v1.0-refactored/watermark_remover_ai/core/processors/watermark_processor.py) 的模块化实现
+
+### 影响范围
+- LaMA模型无法使用，但其他模型正常工作
+- 用户无法选择LaMA作为快速处理选项
+
+### 修复优先级: 🟡 中
+
+---
+
+## 3. 颜色通道问题 (BGR vs RGB)
+
+### 问题描述
+LaMA模型输入端使用BGR格式，输出为RGB格式，而其他模型(ZITS/MAT/FCF)使用RGB格式。当前所有模型都使用了相同的处理方式，导致红蓝通道相反。
+
+### 根本原因分析
+1. **模型差异**: LaMA模型期望BGR输入，其他模型期望RGB输入
+2. **统一处理**: 所有模型都使用了相同的图像预处理逻辑
+3. **缺乏模型特定处理**: 没有根据模型类型进行不同的颜色空间转换
+
+### 技术细节
+- **LaMA**: 输入BGR → 处理 → 输出RGB
+- **ZITS/MAT/FCF**: 输入RGB → 处理 → 输出RGB
+- **当前问题**: 所有模型都按RGB处理，导致LaMA输入错误
+
+### 影响范围
+- LaMA模型输出颜色异常（红蓝通道相反）
+- 其他模型颜色正常
+
+### 修复优先级: 🟡 中
+
+---
+
+## 4. 其他发现的问题
+
+### 4.1 Streamlit UI警告
+```
+The `use_column_width` parameter has been deprecated and will be removed in a future release. 
+Please utilize the `use_container_width` parameter instead.
+```
+
+### 4.2 模型加载顺序问题
+从日志可以看出，模型按ZITS → MAT → FCF → LaMA顺序加载，但LaMA加载失败后，系统仍尝试使用LaMA：
+```
+INFO:core.inference_manager:Using manually selected model: lama
+ERROR:core.inference_manager:❌ Image processing failed: lama processor not loaded
+```
+
+### 4.3 配置重复加载
+```
+INFO:config.config:Configuration loaded from web_config.yaml
+```
+配置被重复加载多次，可能存在性能问题。
+
+### 4.4 显存使用监控不足
+缺乏实时显存使用监控和预警机制。
+
+---
+
+## 5. 修复建议
+
+### 5.1 显存管理优化
+1. 实现智能模型卸载机制
+2. 添加显存使用监控
+3. 实现模型懒加载
+4. 添加显存清理策略
+
+### 5.2 LaMA模块化修复
+1. 参考开源项目实现模块化LaMA处理器
+2. 添加依赖检查和降级机制
+3. 实现可选的LaMA支持
+
+### 5.3 颜色空间处理
+1. 为不同模型实现特定的颜色空间转换
+2. 添加模型特定的预处理逻辑
+3. 统一输出格式为RGB
+
+### 5.4 UI优化
+1. 更新Streamlit参数使用
+2. 添加模型状态显示
+3. 实现更好的错误处理
+
+---
+
+## 6. 测试验证
+
+### 6.1 显存管理测试
+- [ ] 测试模型切换时的显存清理
+- [ ] 验证大图像处理时的显存使用
+- [ ] 测试多模型并发加载
+
+### 6.2 LaMA功能测试
+- [ ] 验证LaMA模型加载
+- [ ] 测试LaMA处理功能
+- [ ] 验证降级机制
+
+### 6.3 颜色处理测试
+- [ ] 验证LaMA颜色输出正确性
+- [ ] 测试其他模型颜色一致性
+- [ ] 对比处理前后颜色
+
+---
+
+## 7. 性能指标
+
+### 7.1 显存使用目标
+- 单模型加载: < 4GB
+- 双模型加载: < 8GB  
+- 模型切换时间: < 5秒
+- 显存清理效率: > 90%
+
+### 7.2 处理性能目标
+- LaMA处理速度: 2-5秒/张
+- ZITS处理速度: 10-30秒/张
+- MAT处理速度: 15-45秒/张
+- FCF处理速度: 8-20秒/张
+
+---
+
+## 8. 更新记录
+
+| 日期 | 版本 | 修改内容 | 状态 |
+|------|------|----------|------|
+| 2025-07-05 | v1.0 | 初始问题记录 | ✅ 完成 |
+| 2025-07-05 | v1.1 | 添加修复方案 | 🔄 进行中 |
+
+---
+
+## 9. 相关资源
+
+- [PyTorch内存管理文档](https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+- [参考项目: kevenGwong/watermarkremoverv--v0.9](https://github.com/kevenGwong/watermarkremoverv--v0.9)
+- [IOPaint项目文档](https://github.com/Sanster/IOPaint)
+- [LaMA项目文档](https://github.com/saic-mdal/lama)

@@ -21,7 +21,7 @@ class ParameterPanel:
     def __init__(self, config_manager: ConfigManager):
         self.config_manager = config_manager
     
-    def render(self) -> Tuple[str, Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+    def render(self) -> Tuple[str, Dict[str, Any], Dict[str, Any], Dict[str, Any], bool]:
         """渲染参数面板"""
         st.sidebar.header("🔬 Debug Parameters")
         
@@ -38,16 +38,17 @@ class ParameterPanel:
         # 性能选项
         performance_params = self._render_performance_section()
         
-        return mask_model, mask_params, inpaint_params, performance_params
+        # 处理模式
+        transparent = self._render_processing_mode()
+        
+        return mask_model, mask_params, inpaint_params, performance_params, transparent
     
     def _render_mask_section(self) -> Tuple[str, Dict[str, Any]]:
         """渲染mask生成部分"""
         st.sidebar.subheader("🎯 Mask Generation")
         mask_model = st.sidebar.selectbox(
             "Mask Model",
-            ["custom", "upload"],
-            index=0,
-            help="选择mask生成方式: custom=智能检测, upload=手动上传"
+
         )
         
         # Mask参数
@@ -149,9 +150,9 @@ class ParameterPanel:
             
             inpaint_params['hd_strategy'] = st.sidebar.selectbox(
                 "HD Strategy",
-                ["CROP", "ORIGINAL"],
+                ["CROP", "RESIZE", "ORIGINAL"],
                 index=0,
-                help="高分辨率处理策略: CROP=分块处理, ORIGINAL=原图处理"
+                help="高分辨率处理策略: CROP=分块处理, RESIZE=缩放处理, ORIGINAL=原图处理"
             )
             
             # 根据策略显示相关参数
@@ -164,10 +165,11 @@ class ParameterPanel:
                     "Crop Trigger Size", 512, 2048, 1024, 64,
                     help="触发分块处理的最小尺寸"
                 )
-            else:
-                # ORIGINAL策略，设置默认值
-                inpaint_params['hd_strategy_crop_margin'] = 64
-                inpaint_params['hd_strategy_crop_trigger_size'] = 1024
+            elif inpaint_params['hd_strategy'] == "RESIZE":
+                inpaint_params['hd_strategy_resize_limit'] = st.sidebar.slider(
+                    "Resize Limit", 512, 2048, 2048, 64,
+                    help="调整尺寸的上限"
+                )
             
             # 模型选择提示
             st.sidebar.info(f"📍 **当前选择**: {specific_model}")
@@ -209,8 +211,8 @@ class ParameterPanel:
         
         inpaint_params['hd_strategy'] = st.sidebar.selectbox(
             "HD Strategy",
-            ["CROP", "ORIGINAL"],
-            help="高分辨率处理策略: CROP=分块处理, ORIGINAL=原图处理"
+            ["CROP", "RESIZE", "ORIGINAL"],
+            help="高分辨率处理策略"
         )
         
         # 只在CROP策略下显示Crop Margin
@@ -224,12 +226,18 @@ class ParameterPanel:
                 help="触发分块处理的最小尺寸"
             )
         else:
-            # ORIGINAL策略设置默认值
+            # 为其他策略设置默认值
             inpaint_params['hd_strategy_crop_margin'] = 64
             inpaint_params['hd_strategy_crop_trigger_size'] = 800
         
-        # 设置resize limit默认值（内部使用）
-        inpaint_params['hd_strategy_resize_limit'] = 1600
+        # 只在RESIZE策略下显示Resize Limit
+        if inpaint_params['hd_strategy'] == "RESIZE":
+            inpaint_params['hd_strategy_resize_limit'] = st.sidebar.slider(
+                "Resize Limit", 512, 2048, 1600, 64,
+                help="调整尺寸上限"
+            )
+        else:
+            inpaint_params['hd_strategy_resize_limit'] = 1600
         
         # Common parameters
         inpaint_params['seed'] = st.sidebar.number_input(
@@ -258,6 +266,18 @@ class ParameterPanel:
         
         return performance_params
     
+    def _render_processing_mode(self) -> bool:
+        """渲染处理模式部分"""
+        st.sidebar.divider()
+        st.sidebar.subheader("🔧 Processing Mode")
+        
+        transparent = st.sidebar.checkbox(
+            "Transparent Mode",
+            value=False,
+            help="创建透明区域而不是填充修复"
+        )
+        
+        return transparent
 
 class MainInterface:
     """主界面"""
@@ -266,13 +286,14 @@ class MainInterface:
         self.config_manager = config_manager
         self.parameter_panel = ParameterPanel(config_manager)
     
-    def _check_parameter_changes(self, mask_model, mask_params, inpaint_params, performance_params):
+    def _check_parameter_changes(self, mask_model, mask_params, inpaint_params, performance_params, transparent):
         """检查参数是否发生变化，如果有变化则清除旧结果以触发界面刷新"""
         current_params = {
             'mask_model': mask_model,
             'mask_params': mask_params.copy(),
             'inpaint_params': inpaint_params.copy(),
-            'performance_params': performance_params.copy()
+            'performance_params': performance_params.copy(),
+            'transparent': transparent
         }
         
         # 检查是否有之前的参数状态
@@ -294,6 +315,9 @@ class MainInterface:
             if last_params.get('inpaint_params', {}).get('force_model') != current_params['inpaint_params'].get('force_model'):
                 key_changes.append('specific_model')
             
+            # 检查透明模式变化
+            if last_params.get('transparent') != current_params['transparent']:
+                key_changes.append('transparent_mode')
             
             # 如果有关键参数变化，清除旧结果
             if key_changes:
