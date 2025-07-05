@@ -4,10 +4,15 @@
 """
 
 from .processing_result import ProcessingResult
-from .watermark_processor import WatermarkProcessor, EnhancedWatermarkProcessor
+from .simplified_watermark_processor import SimplifiedWatermarkProcessor
+
+# 兼容性别名 - 避免循环导入
+WatermarkProcessor = SimplifiedWatermarkProcessor
+EnhancedWatermarkProcessor = SimplifiedWatermarkProcessor
 
 __all__ = [
     'ProcessingResult',
+    'SimplifiedWatermarkProcessor',
     'WatermarkProcessor', 
     'EnhancedWatermarkProcessor'
 ] 
