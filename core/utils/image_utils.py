@@ -180,15 +180,25 @@ class ImageUtils:
     
     @staticmethod
     def prepare_arrays_for_iopaint(image: Image.Image, mask: Image.Image) -> Tuple[np.ndarray, np.ndarray]:
-        """为所有IOPaint模型（MAT/ZITS/FCF/LaMA）准备numpy数组"""
+        """为所有IOPaint模型（MAT/ZITS/FCF/LaMA）准备numpy数组
+        
+        IOPaint实际行为：
+        - IOPaint内部模型期望BGR格式输入（通过测试验证）
+        - 输入BGR → 输出RGB（IOPaint内部进行转换）
+        - Mask：单通道灰度数组 (H, W)，值范围0-255，白色=需要修复的区域
+        """
         import cv2
         
-        # IOPaint期望RGB格式的numpy数组
-        image_array = np.array(image.convert("RGB"))
+        # 先转为RGB，再转为BGR给IOPaint
+        image_rgb = np.array(image.convert("RGB"))
+        image_array = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
+        
         mask_array = np.array(mask.convert("L"))
         
-        # 确保mask是二值的
+        # 确保mask是二值的，白色区域=需要修复的区域
         mask_array = (mask_array > 128).astype(np.uint8) * 255
+        
+        logger.debug(f"IOPaint准备: 图像{image_array.shape} BGR格式(转换自RGB), Mask{mask_array.shape} 灰度格式")
         
         return image_array, mask_array
     

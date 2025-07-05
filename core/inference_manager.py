@@ -71,7 +71,7 @@ class InferenceManager:
             mask = self._generate_mask(image, mask_model, mask_params)
             
             # 手动选择模型
-            model_name = inpaint_params.get('force_model', None)
+            model_name = inpaint_params.get('model_name', None)
             if model_name is None:
                 # 如果没有指定模型，使用第一个可用的模型
                 available_models = self.unified_processor.get_available_models()
@@ -80,7 +80,7 @@ class InferenceManager:
                 model_name = available_models[0]
                 logger.info(f"No model specified, using default: {model_name}")
             
-            logger.info(f"Using manually selected model: {model_name}")
+            logger.info(f"Using selected model: {model_name}")
             
             # 执行inpainting
             result_array = self.unified_processor.predict_with_model(
