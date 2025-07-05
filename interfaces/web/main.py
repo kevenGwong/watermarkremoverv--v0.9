@@ -46,6 +46,10 @@ def init_session_state():
         st.session_state.processing_result = None
     if 'original_image' not in st.session_state:
         st.session_state.original_image = None
+    if 'last_parameters' not in st.session_state:
+        st.session_state.last_parameters = None
+    if 'current_parameters' not in st.session_state:
+        st.session_state.current_parameters = None
 
 # 加载处理器
 def load_processor():

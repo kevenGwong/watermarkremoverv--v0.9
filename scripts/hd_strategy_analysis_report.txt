@@ -1,0 +1,1250 @@
+================================================================================
+HD Strategy 实现分析报告
+================================================================================
+分析时间: 2025-07-05 07:55:22
+
+📁 代码引用分析
+----------------------------------------
+
+📄 config/config.py:
+  Line 33: default_hd_strategy: str = "CROP"
+  Line 119: if 'hd_strategy' in validated:
+  Line 120: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 121: validated['hd_strategy'] = 'CROP'
+  Line 133: if 'hd_strategy_crop_margin' in validated:
+  Line 134: validated['hd_strategy_crop_margin'] = max(32, min(128, validated['hd_strategy_crop_margin']))
+  Line 136: if 'hd_strategy_crop_trigger_size' in validated:
+  Line 137: validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+  Line 140: if 'hd_strategy_resize_limit' in validated:
+  Line 141: validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+  Line 154: if 'hd_strategy' in validated:
+  Line 155: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 156: validated['hd_strategy'] = 'CROP'
+  Line 159: if 'hd_strategy_crop_margin' in validated:
+  Line 160: validated['hd_strategy_crop_margin'] = max(32, min(256, validated['hd_strategy_crop_margin']))
+  Line 162: if 'hd_strategy_crop_trigger_size' in validated:
+  Line 163: validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+  Line 166: if 'hd_strategy_resize_limit' in validated:
+  Line 167: validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+  Line 198: 'hd_strategy': 'CROP',
+  Line 199: 'hd_strategy_crop_margin': 64,
+  Line 200: 'hd_strategy_crop_trigger_size': 1024,
+  Line 201: 'hd_strategy_resize_limit': 2048,
+  Line 209: 'hd_strategy': self.app_config.default_hd_strategy,
+  Line 210: 'hd_strategy_crop_margin': self.app_config.default_crop_margin,
+  Line 211: 'hd_strategy_crop_trigger_size': self.app_config.default_crop_trigger_size,
+  Line 212: 'hd_strategy_resize_limit': self.app_config.default_resize_limit,
+  Line 33: default_hd_strategy: str = "CROP"
+  Line 119: if 'hd_strategy' in validated:
+  Line 120: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 121: validated['hd_strategy'] = 'CROP'
+  Line 133: if 'hd_strategy_crop_margin' in validated:
+  Line 134: validated['hd_strategy_crop_margin'] = max(32, min(128, validated['hd_strategy_crop_margin']))
+  Line 136: if 'hd_strategy_crop_trigger_size' in validated:
+  Line 137: validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+  Line 140: if 'hd_strategy_resize_limit' in validated:
+  Line 141: validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+  Line 154: if 'hd_strategy' in validated:
+  Line 155: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 156: validated['hd_strategy'] = 'CROP'
+  Line 159: if 'hd_strategy_crop_margin' in validated:
+  Line 160: validated['hd_strategy_crop_margin'] = max(32, min(256, validated['hd_strategy_crop_margin']))
+  Line 162: if 'hd_strategy_crop_trigger_size' in validated:
+  Line 163: validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+  Line 166: if 'hd_strategy_resize_limit' in validated:
+  Line 167: validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+  Line 198: 'hd_strategy': 'CROP',
+  Line 199: 'hd_strategy_crop_margin': 64,
+  Line 200: 'hd_strategy_crop_trigger_size': 1024,
+  Line 201: 'hd_strategy_resize_limit': 2048,
+  Line 209: 'hd_strategy': self.app_config.default_hd_strategy,
+  Line 210: 'hd_strategy_crop_margin': self.app_config.default_crop_margin,
+  Line 211: 'hd_strategy_crop_trigger_size': self.app_config.default_crop_trigger_size,
+  Line 212: 'hd_strategy_resize_limit': self.app_config.default_resize_limit,
+  Line 120: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 155: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 33: default_hd_strategy: str = "CROP"
+  Line 34: default_crop_margin: int = 64
+  Line 35: default_crop_trigger_size: int = 800
+  Line 120: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 121: validated['hd_strategy'] = 'CROP'
+  Line 132: # 验证crop参数
+  Line 133: if 'hd_strategy_crop_margin' in validated:
+  Line 134: validated['hd_strategy_crop_margin'] = max(32, min(128, validated['hd_strategy_crop_margin']))
+  Line 136: if 'hd_strategy_crop_trigger_size' in validated:
+  Line 137: validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+  Line 155: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 156: validated['hd_strategy'] = 'CROP'
+  Line 158: # 验证crop参数
+  Line 159: if 'hd_strategy_crop_margin' in validated:
+  Line 160: validated['hd_strategy_crop_margin'] = max(32, min(256, validated['hd_strategy_crop_margin']))
+  Line 162: if 'hd_strategy_crop_trigger_size' in validated:
+  Line 163: validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+  Line 198: 'hd_strategy': 'CROP',
+  Line 199: 'hd_strategy_crop_margin': 64,
+  Line 200: 'hd_strategy_crop_trigger_size': 1024,
+  Line 210: 'hd_strategy_crop_margin': self.app_config.default_crop_margin,
+  Line 211: 'hd_strategy_crop_trigger_size': self.app_config.default_crop_trigger_size,
+  Line 36: default_resize_limit: int = 1600
+  Line 120: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 139: # 验证resize参数
+  Line 140: if 'hd_strategy_resize_limit' in validated:
+  Line 141: validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+  Line 155: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 165: # 验证resize参数
+  Line 166: if 'hd_strategy_resize_limit' in validated:
+  Line 167: validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+  Line 201: 'hd_strategy_resize_limit': 2048,
+  Line 212: 'hd_strategy_resize_limit': self.app_config.default_resize_limit,
+  Line 35: default_crop_trigger_size: int = 800
+  Line 136: if 'hd_strategy_crop_trigger_size' in validated:
+  Line 137: validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+  Line 162: if 'hd_strategy_crop_trigger_size' in validated:
+  Line 163: validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+  Line 200: 'hd_strategy_crop_trigger_size': 1024,
+  Line 211: 'hd_strategy_crop_trigger_size': self.app_config.default_crop_trigger_size,
+  Line 36: default_resize_limit: int = 1600
+  Line 140: if 'hd_strategy_resize_limit' in validated:
+  Line 141: validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+  Line 166: if 'hd_strategy_resize_limit' in validated:
+  Line 167: validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+  Line 201: 'hd_strategy_resize_limit': 2048,
+  Line 212: 'hd_strategy_resize_limit': self.app_config.default_resize_limit,
+  Line 34: default_crop_margin: int = 64
+  Line 133: if 'hd_strategy_crop_margin' in validated:
+  Line 134: validated['hd_strategy_crop_margin'] = max(32, min(128, validated['hd_strategy_crop_margin']))
+  Line 159: if 'hd_strategy_crop_margin' in validated:
+  Line 160: validated['hd_strategy_crop_margin'] = max(32, min(256, validated['hd_strategy_crop_margin']))
+  Line 199: 'hd_strategy_crop_margin': 64,
+  Line 210: 'hd_strategy_crop_margin': self.app_config.default_crop_margin,
+
+📄 config/config_utils.py:
+  Line 33: default_hd_strategy: str = "CROP"
+  Line 121: if 'hd_strategy' in validated:
+  Line 122: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 123: validated['hd_strategy'] = 'CROP'
+  Line 126: if 'hd_strategy_crop_margin' in validated:
+  Line 127: validated['hd_strategy_crop_margin'] = max(32, min(256, validated['hd_strategy_crop_margin']))
+  Line 129: if 'hd_strategy_crop_trigger_size' in validated:
+  Line 130: validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+  Line 133: if 'hd_strategy_resize_limit' in validated:
+  Line 134: validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+  Line 163: 'hd_strategy': self.app_config.default_hd_strategy,
+  Line 164: 'hd_strategy_crop_margin': self.app_config.default_crop_margin,
+  Line 165: 'hd_strategy_crop_trigger_size': self.app_config.default_crop_trigger_size,
+  Line 166: 'hd_strategy_resize_limit': self.app_config.default_resize_limit,
+  Line 33: default_hd_strategy: str = "CROP"
+  Line 121: if 'hd_strategy' in validated:
+  Line 122: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 123: validated['hd_strategy'] = 'CROP'
+  Line 126: if 'hd_strategy_crop_margin' in validated:
+  Line 127: validated['hd_strategy_crop_margin'] = max(32, min(256, validated['hd_strategy_crop_margin']))
+  Line 129: if 'hd_strategy_crop_trigger_size' in validated:
+  Line 130: validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+  Line 133: if 'hd_strategy_resize_limit' in validated:
+  Line 134: validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+  Line 163: 'hd_strategy': self.app_config.default_hd_strategy,
+  Line 164: 'hd_strategy_crop_margin': self.app_config.default_crop_margin,
+  Line 165: 'hd_strategy_crop_trigger_size': self.app_config.default_crop_trigger_size,
+  Line 166: 'hd_strategy_resize_limit': self.app_config.default_resize_limit,
+  Line 122: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 33: default_hd_strategy: str = "CROP"
+  Line 34: default_crop_margin: int = 64
+  Line 35: default_crop_trigger_size: int = 800
+  Line 122: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 123: validated['hd_strategy'] = 'CROP'
+  Line 125: # 验证crop参数
+  Line 126: if 'hd_strategy_crop_margin' in validated:
+  Line 127: validated['hd_strategy_crop_margin'] = max(32, min(256, validated['hd_strategy_crop_margin']))
+  Line 129: if 'hd_strategy_crop_trigger_size' in validated:
+  Line 130: validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+  Line 164: 'hd_strategy_crop_margin': self.app_config.default_crop_margin,
+  Line 165: 'hd_strategy_crop_trigger_size': self.app_config.default_crop_trigger_size,
+  Line 36: default_resize_limit: int = 1600
+  Line 122: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 132: # 验证resize参数
+  Line 133: if 'hd_strategy_resize_limit' in validated:
+  Line 134: validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+  Line 166: 'hd_strategy_resize_limit': self.app_config.default_resize_limit,
+  Line 35: default_crop_trigger_size: int = 800
+  Line 129: if 'hd_strategy_crop_trigger_size' in validated:
+  Line 130: validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+  Line 165: 'hd_strategy_crop_trigger_size': self.app_config.default_crop_trigger_size,
+  Line 36: default_resize_limit: int = 1600
+  Line 133: if 'hd_strategy_resize_limit' in validated:
+  Line 134: validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+  Line 166: 'hd_strategy_resize_limit': self.app_config.default_resize_limit,
+  Line 34: default_crop_margin: int = 64
+  Line 126: if 'hd_strategy_crop_margin' in validated:
+  Line 127: validated['hd_strategy_crop_margin'] = max(32, min(256, validated['hd_strategy_crop_margin']))
+  Line 164: 'hd_strategy_crop_margin': self.app_config.default_crop_margin,
+
+📄 core/inference_manager.py:
+  Line 158: mask = mask.resize(image.size, Image.NEAREST)
+
+📄 scripts/test_high_resolution_fix.py:
+  Line 69: for original_width, original_height in test_resolutions:
+  Line 70: logger.info(f"\n🎯 测试分辨率: {original_width}x{original_height}")
+  Line 73: image, mask = create_test_image_and_mask(original_width, original_height)
+  Line 79: image.save(input_dir / f"test_{original_width}x{original_height}.png")
+  Line 80: mask.save(input_dir / f"test_mask_{original_width}x{original_height}.png")
+  Line 89: 'preserve_original_resolution': True,
+  Line 107: result_width == original_width and
+  Line 108: result_height == original_height
+  Line 112: 'original_size': (original_width, original_height),
+  Line 122: output_dir / f"result_{original_width}x{original_height}.png"
+  Line 126: logger.info(f"{status}: {original_width}x{original_height} -> {result_width}x{result_height}")
+  Line 131: 'original_size': (original_width, original_height),
+  Line 152: logger.info(f"{status} {result['original_size']} -> {result['result_size']}")
+  Line 154: logger.info(f"❌ {result['original_size']}: {result.get('error', 'Unknown error')}")
+  Line 88: 'crop_trigger_size': 1024,
+  Line 90: 'high_quality_resize': True
+  Line 88: 'crop_trigger_size': 1024,
+
+📄 scripts/test_ui_refresh.py:
+  Line 40: 'hd_strategy': 'ORIGINAL'
+  Line 49: 'hd_strategy': 'ORIGINAL'
+  Line 58: 'hd_strategy': 'ORIGINAL'
+  Line 66: 'hd_strategy': 'ORIGINAL'
+  Line 75: 'hd_strategy': 'ORIGINAL'
+  Line 162: 'hd_strategy': 'ORIGINAL',
+  Line 40: 'hd_strategy': 'ORIGINAL'
+  Line 49: 'hd_strategy': 'ORIGINAL'
+  Line 58: 'hd_strategy': 'ORIGINAL'
+  Line 66: 'hd_strategy': 'ORIGINAL'
+  Line 75: 'hd_strategy': 'ORIGINAL'
+  Line 162: 'hd_strategy': 'ORIGINAL',
+  Line 40: 'hd_strategy': 'ORIGINAL'
+  Line 49: 'hd_strategy': 'ORIGINAL'
+  Line 58: 'hd_strategy': 'ORIGINAL'
+  Line 66: 'hd_strategy': 'ORIGINAL'
+  Line 75: 'hd_strategy': 'ORIGINAL'
+  Line 162: 'hd_strategy': 'ORIGINAL',
+  Line 173: original_array = np.array(test_image)
+  Line 174: diff_pixels = np.sum(np.abs(result_array - original_array))
+
+📄 scripts/test_full_pipeline.py:
+  Line 122: original_region = np.array(test_image)[final_mask_array > 128]
+  Line 123: change = np.mean(np.abs(mask_region.astype(float) - original_region.astype(float)))
+  Line 72: 'crop_trigger_size': 512,
+  Line 73: 'crop_margin': 64,
+  Line 74: 'resize_to_512': True,
+  Line 72: 'crop_trigger_size': 512,
+  Line 73: 'crop_margin': 64,
+
+📄 scripts/test_three_models.py:
+  Line 73: 'hd_strategy': 'ORIGINAL',
+  Line 73: 'hd_strategy': 'ORIGINAL',
+  Line 73: 'hd_strategy': 'ORIGINAL',
+
+📄 scripts/test_iopaint_alignment.py:
+  Line 90: 'hd_strategy': 'ORIGINAL'
+  Line 176: 'hd_strategy': 'ORIGINAL',  # 确保无resize
+  Line 90: 'hd_strategy': 'ORIGINAL'
+  Line 176: 'hd_strategy': 'ORIGINAL',  # 确保无resize
+  Line 90: 'hd_strategy': 'ORIGINAL'
+  Line 176: 'hd_strategy': 'ORIGINAL',  # 确保无resize
+  Line 176: 'hd_strategy': 'ORIGINAL',  # 确保无resize
+
+📄 scripts/test_mask_fix.py:
+  Line 72: 'hd_strategy': 'ORIGINAL',
+  Line 72: 'hd_strategy': 'ORIGINAL',
+  Line 72: 'hd_strategy': 'ORIGINAL',
+
+📄 scripts/analyze_hd_strategy_implementation.py:
+  Line 30: def find_hd_strategy_references(self) -> Dict[str, List[str]]:
+  Line 33: r'hd_strategy',
+  Line 35: r'HD_STRATEGY',
+  Line 99: if any(keyword in line.lower() for keyword in ['hd_strategy', 'crop', 'resize']):
+  Line 128: 'hd_strategy_usage': [],
+  Line 137: if 'hd_strategy' in line_lower:
+  Line 138: analysis['hd_strategy_usage'].append(f"Line {i}: {line.strip()}")
+  Line 195: references = self.find_hd_strategy_references()
+  Line 239: if analysis['hd_strategy_usage']:
+  Line 241: for usage in analysis['hd_strategy_usage']:
+  Line 281: required_configs = ['hd_strategy', 'crop_trigger', 'resize_limit']
+  Line 328: report_path = Path("scripts/hd_strategy_analysis_report.txt")
+  Line 23: class HDStrategyAnalyzer:
+  Line 34: r'HDStrategy',
+  Line 160: from iopaint.schema import HDStrategy
+  Line 163: 'hd_strategies': [attr for attr in dir(HDStrategy) if not attr.startswith('_')]
+  Line 322: analyzer = HDStrategyAnalyzer()
+  Line 30: def find_hd_strategy_references(self) -> Dict[str, List[str]]:
+  Line 33: r'hd_strategy',
+  Line 35: r'HD_STRATEGY',
+  Line 99: if any(keyword in line.lower() for keyword in ['hd_strategy', 'crop', 'resize']):
+  Line 128: 'hd_strategy_usage': [],
+  Line 137: if 'hd_strategy' in line_lower:
+  Line 138: analysis['hd_strategy_usage'].append(f"Line {i}: {line.strip()}")
+  Line 195: references = self.find_hd_strategy_references()
+  Line 239: if analysis['hd_strategy_usage']:
+  Line 241: for usage in analysis['hd_strategy_usage']:
+  Line 281: required_configs = ['hd_strategy', 'crop_trigger', 'resize_limit']
+  Line 328: report_path = Path("scripts/hd_strategy_analysis_report.txt")
+  Line 36: r'ORIGINAL',
+  Line 140: if 'config' in line_lower and any(keyword in line_lower for keyword in ['crop', 'resize', 'original']):
+  Line 143: if any(keyword in line for keyword in ['CROP', 'RESIZE', 'ORIGINAL']):
+  Line 37: r'CROP',
+  Line 39: r'crop_trigger',
+  Line 41: r'crop_margin'
+  Line 99: if any(keyword in line.lower() for keyword in ['hd_strategy', 'crop', 'resize']):
+  Line 140: if 'config' in line_lower and any(keyword in line_lower for keyword in ['crop', 'resize', 'original']):
+  Line 143: if any(keyword in line for keyword in ['CROP', 'RESIZE', 'ORIGINAL']):
+  Line 281: required_configs = ['hd_strategy', 'crop_trigger', 'resize_limit']
+  Line 38: r'RESIZE',
+  Line 40: r'resize_limit',
+  Line 99: if any(keyword in line.lower() for keyword in ['hd_strategy', 'crop', 'resize']):
+  Line 140: if 'config' in line_lower and any(keyword in line_lower for keyword in ['crop', 'resize', 'original']):
+  Line 143: if any(keyword in line for keyword in ['CROP', 'RESIZE', 'ORIGINAL']):
+  Line 281: required_configs = ['hd_strategy', 'crop_trigger', 'resize_limit']
+  Line 39: r'crop_trigger',
+  Line 281: required_configs = ['hd_strategy', 'crop_trigger', 'resize_limit']
+  Line 40: r'resize_limit',
+  Line 281: required_configs = ['hd_strategy', 'crop_trigger', 'resize_limit']
+  Line 41: r'crop_margin'
+
+📄 scripts/test_image_formats.py:
+  Line 76: 'hd_strategy': 'ORIGINAL',  # 确保无resize
+  Line 76: 'hd_strategy': 'ORIGINAL',  # 确保无resize
+  Line 76: 'hd_strategy': 'ORIGINAL',  # 确保无resize
+  Line 76: 'hd_strategy': 'ORIGINAL',  # 确保无resize
+
+📄 scripts/test_integration.py:
+  Line 103: 'crop_trigger_size': 512,
+  Line 104: 'enable_crop_strategy': True
+  Line 117: print(f"   - Crop策略: {test_params['performance_params']['enable_crop_strategy']}")
+  Line 175: performance_params = {'crop_trigger_size': 512}
+  Line 103: 'crop_trigger_size': 512,
+  Line 175: performance_params = {'crop_trigger_size': 512}
+
+📄 scripts/test_hd_strategy_quick.py:
+  Line 109: 'hd_strategy': strategy,
+  Line 110: 'hd_strategy_crop_margin': 64,
+  Line 111: 'hd_strategy_crop_trigger_size': crop_trigger,
+  Line 112: 'hd_strategy_resize_limit': resize_limit,
+  Line 109: 'hd_strategy': strategy,
+  Line 110: 'hd_strategy_crop_margin': 64,
+  Line 111: 'hd_strategy_crop_trigger_size': crop_trigger,
+  Line 112: 'hd_strategy_resize_limit': resize_limit,
+  Line 43: self.strategies = ['ORIGINAL', 'CROP', 'RESIZE']
+  Line 91: if strategy == 'ORIGINAL':
+  Line 92: # ORIGINAL应该保持原始尺寸
+  Line 148: 'original_size': test_image.size,
+  Line 161: 'original_size': test_image.size,
+  Line 177: 'original_size': test_image.size,
+  Line 194: if strategy == 'ORIGINAL':
+  Line 240: details = f"{result['original_size']} -> {result['result_size']}"
+  Line 252: # 分析ORIGINAL策略
+  Line 253: original_results = []
+  Line 255: if 'ORIGINAL' in size_results:
+  Line 256: original_results.append(size_results['ORIGINAL'])
+  Line 258: original_preserved = sum(1 for r in original_results if r['success'] and r['size_preserved'])
+  Line 259: if original_preserved == len(original_results):
+  Line 260: print("✅ ORIGINAL策略正确：所有测试都保持了原始尺寸")
+  Line 262: print(f"❌ ORIGINAL策略异常：{original_preserved}/{len(original_results)} 保持了原始尺寸")
+  Line 37: (800, 600),      # 中等尺寸 - 应该触发CROP
+  Line 38: (1024, 768),     # 标准尺寸 - 应该触发CROP
+  Line 39: (1920, 1080),    # 高分辨率 - 应该触发CROP
+  Line 40: (2048, 1536)     # 超高分辨率 - 应该触发CROP
+  Line 43: self.strategies = ['ORIGINAL', 'CROP', 'RESIZE']
+  Line 93: crop_trigger = 99999
+  Line 95: elif strategy == 'CROP':
+  Line 96: # CROP应该在图像超过阈值时分块处理
+  Line 97: crop_trigger = 600  # 较低阈值确保触发
+  Line 101: crop_trigger = 99999
+  Line 110: 'hd_strategy_crop_margin': 64,
+  Line 111: 'hd_strategy_crop_trigger_size': crop_trigger,
+  Line 153: 'expected_behavior': self._get_expected_behavior(strategy, size, crop_trigger, resize_limit)
+  Line 189: def _get_expected_behavior(self, strategy: str, size: Tuple[int, int], crop_trigger: int, resize_limit: int) -> str:
+  Line 196: elif strategy == 'CROP':
+  Line 197: if max_dim > crop_trigger:
+  Line 264: # 分析CROP策略
+  Line 265: crop_results = []
+  Line 267: if 'CROP' in size_results:
+  Line 268: crop_results.append(size_results['CROP'])
+  Line 270: crop_preserved = sum(1 for r in crop_results if r['success'] and r['size_preserved'])
+  Line 271: if crop_preserved == len(crop_results):
+  Line 272: print("✅ CROP策略正确：所有测试都保持了原始尺寸（分块处理后合成）")
+  Line 274: print(f"❌ CROP策略异常：{crop_preserved}/{len(crop_results)} 保持了原始尺寸")
+  Line 43: self.strategies = ['ORIGINAL', 'CROP', 'RESIZE']
+  Line 94: resize_limit = 99999
+  Line 98: resize_limit = 2048
+  Line 99: else:  # RESIZE
+  Line 100: # RESIZE应该限制最大尺寸
+  Line 102: resize_limit = 1024  # 较低限制确保触发
+  Line 112: 'hd_strategy_resize_limit': resize_limit,
+  Line 153: 'expected_behavior': self._get_expected_behavior(strategy, size, crop_trigger, resize_limit)
+  Line 189: def _get_expected_behavior(self, strategy: str, size: Tuple[int, int], crop_trigger: int, resize_limit: int) -> str:
+  Line 201: else:  # RESIZE
+  Line 202: if max_dim > resize_limit:
+  Line 203: scale = resize_limit / max_dim
+  Line 276: # 分析RESIZE策略
+  Line 277: resize_results = []
+  Line 279: if 'RESIZE' in size_results:
+  Line 280: resize_results.append(size_results['RESIZE'])
+  Line 282: resize_changed = sum(1 for r in resize_results if r['success'] and not r['size_preserved'])
+  Line 283: if resize_changed > 0:
+  Line 284: print(f"✅ RESIZE策略正确：{resize_changed}/{len(resize_results)} 改变了尺寸")
+  Line 286: print(f"⚠️  RESIZE策略可能异常：没有测试改变了尺寸")
+  Line 93: crop_trigger = 99999
+  Line 97: crop_trigger = 600  # 较低阈值确保触发
+  Line 101: crop_trigger = 99999
+  Line 111: 'hd_strategy_crop_trigger_size': crop_trigger,
+  Line 153: 'expected_behavior': self._get_expected_behavior(strategy, size, crop_trigger, resize_limit)
+  Line 189: def _get_expected_behavior(self, strategy: str, size: Tuple[int, int], crop_trigger: int, resize_limit: int) -> str:
+  Line 197: if max_dim > crop_trigger:
+  Line 94: resize_limit = 99999
+  Line 98: resize_limit = 2048
+  Line 102: resize_limit = 1024  # 较低限制确保触发
+  Line 112: 'hd_strategy_resize_limit': resize_limit,
+  Line 153: 'expected_behavior': self._get_expected_behavior(strategy, size, crop_trigger, resize_limit)
+  Line 189: def _get_expected_behavior(self, strategy: str, size: Tuple[int, int], crop_trigger: int, resize_limit: int) -> str:
+  Line 202: if max_dim > resize_limit:
+  Line 203: scale = resize_limit / max_dim
+  Line 110: 'hd_strategy_crop_margin': 64,
+
+📄 scripts/test_webui_flow.py:
+  Line 137: 'hd_strategy': 'CROP',
+  Line 138: 'hd_strategy_crop_margin': 64,
+  Line 139: 'hd_strategy_crop_trigger_size': 800,
+  Line 197: 'hd_strategy': 'ORIGINAL',
+  Line 137: 'hd_strategy': 'CROP',
+  Line 138: 'hd_strategy_crop_margin': 64,
+  Line 139: 'hd_strategy_crop_trigger_size': 800,
+  Line 197: 'hd_strategy': 'ORIGINAL',
+  Line 197: 'hd_strategy': 'ORIGINAL',
+  Line 121: 'crop_trigger_size': 512,
+  Line 122: 'crop_margin': 64,
+  Line 137: 'hd_strategy': 'CROP',
+  Line 138: 'hd_strategy_crop_margin': 64,
+  Line 139: 'hd_strategy_crop_trigger_size': 800,
+  Line 253: 'crop_trigger_size': 512,
+  Line 254: 'crop_margin': 64,
+  Line 123: 'resize_to_512': True,
+  Line 121: 'crop_trigger_size': 512,
+  Line 139: 'hd_strategy_crop_trigger_size': 800,
+  Line 253: 'crop_trigger_size': 512,
+  Line 122: 'crop_margin': 64,
+  Line 138: 'hd_strategy_crop_margin': 64,
+  Line 254: 'crop_margin': 64,
+
+📄 scripts/test_mask_scenarios.py:
+  Line 166: 'hd_strategy': 'ORIGINAL',
+  Line 166: 'hd_strategy': 'ORIGINAL',
+  Line 166: 'hd_strategy': 'ORIGINAL',
+
+📄 scripts/test_mask_debug.py:
+  Line 53: # 测试 crop 策略
+  Line 54: print("\n🔍 测试 crop 策略...")
+  Line 55: crop_size = 512
+  Line 71: # Ensure minimum crop size
+  Line 72: if x2 - x1 < crop_size or y2 - y1 < crop_size:
+  Line 73: # Center the crop around the contour
+  Line 77: half_size = crop_size // 2
+  Line 80: x2 = min(width, x1 + crop_size)
+  Line 81: y2 = min(height, y1 + crop_size)
+  Line 84: if x2 - x1 < crop_size:
+  Line 85: x1 = max(0, x2 - crop_size)
+  Line 86: if y2 - y1 < crop_size:
+  Line 87: y1 = max(0, y2 - crop_size)
+  Line 94: # 测试 crop 区域
+  Line 97: crop_image = test_image.crop((x1, y1, x2, y2))
+  Line 98: crop_mask = test_mask.crop((x1, y1, x2, y2))
+  Line 99: print(f"📦 Crop 区域尺寸: {crop_image.size}")
+  Line 100: print(f"📦 Crop mask 尺寸: {crop_mask.size}")
+  Line 102: # 检查 crop mask 内容
+  Line 103: crop_mask_array = np.array(crop_mask)
+  Line 104: crop_white_pixels = np.sum(crop_mask_array > 128)
+  Line 105: crop_total_pixels = crop_mask_array.size
+  Line 106: crop_coverage = crop_white_pixels / crop_total_pixels * 100
+  Line 107: print(f"🔍 Crop mask 覆盖率: {crop_coverage:.2f}%")
+
+📄 scripts/test_ui_functionality.py:
+  Line 43: # 测试crop策略
+  Line 44: self.test_crop_strategy()
+  Line 70: 'crop_trigger_size': (256, 1024)
+  Line 172: def test_crop_strategy(self):
+  Line 173: """测试crop策略"""
+  Line 174: print("\n✂️  Crop策略测试")
+  Line 186: # 测试不同的crop参数
+  Line 187: crop_configs = [
+  Line 188: {'crop_trigger_size': 512, 'crop_margin': 32},
+  Line 189: {'crop_trigger_size': 640, 'crop_margin': 64},
+  Line 190: {'crop_trigger_size': 800, 'crop_margin': 128}
+  Line 193: for config in crop_configs:
+  Line 194: print(f"\n   🔸 Crop配置: trigger_size={config['crop_trigger_size']}, margin={config['crop_margin']}")
+  Line 197: 'crop_trigger_size': config['crop_trigger_size'],
+  Line 198: 'crop_margin': config['crop_margin'],
+  Line 199: 'enable_crop_strategy': True
+  Line 215: print(f"     ✅ Crop策略成功 - 处理时间: {result.processing_time:.2f}秒")
+  Line 218: print(f"     ❌ Crop策略失败: {result.error_message}")
+  Line 221: print(f"❌ Crop策略测试失败: {e}")
+  Line 277: print("   - Crop策略功能正常")
+  Line 70: 'crop_trigger_size': (256, 1024)
+  Line 188: {'crop_trigger_size': 512, 'crop_margin': 32},
+  Line 189: {'crop_trigger_size': 640, 'crop_margin': 64},
+  Line 190: {'crop_trigger_size': 800, 'crop_margin': 128}
+  Line 194: print(f"\n   🔸 Crop配置: trigger_size={config['crop_trigger_size']}, margin={config['crop_margin']}")
+  Line 197: 'crop_trigger_size': config['crop_trigger_size'],
+  Line 188: {'crop_trigger_size': 512, 'crop_margin': 32},
+  Line 189: {'crop_trigger_size': 640, 'crop_margin': 64},
+  Line 190: {'crop_trigger_size': 800, 'crop_margin': 128}
+  Line 194: print(f"\n   🔸 Crop配置: trigger_size={config['crop_trigger_size']}, margin={config['crop_margin']}")
+  Line 198: 'crop_margin': config['crop_margin'],
+
+📄 scripts/test_ui_logic_only.py:
+  Line 20: 'hd_strategy': 'ORIGINAL'
+  Line 29: 'hd_strategy': 'ORIGINAL'
+  Line 38: 'hd_strategy': 'ORIGINAL'
+  Line 46: 'hd_strategy': 'ORIGINAL'
+  Line 55: 'hd_strategy': 'ORIGINAL'
+  Line 20: 'hd_strategy': 'ORIGINAL'
+  Line 29: 'hd_strategy': 'ORIGINAL'
+  Line 38: 'hd_strategy': 'ORIGINAL'
+  Line 46: 'hd_strategy': 'ORIGINAL'
+  Line 55: 'hd_strategy': 'ORIGINAL'
+  Line 20: 'hd_strategy': 'ORIGINAL'
+  Line 29: 'hd_strategy': 'ORIGINAL'
+  Line 38: 'hd_strategy': 'ORIGINAL'
+  Line 46: 'hd_strategy': 'ORIGINAL'
+  Line 55: 'hd_strategy': 'ORIGINAL'
+
+📄 scripts/test_iopaint_integration.py:
+  Line 89: 'hd_strategy': 'CROP'
+  Line 89: 'hd_strategy': 'CROP'
+  Line 89: 'hd_strategy': 'CROP'
+
+📄 scripts/test_hd_strategy_comprehensive.py:
+  Line 39: hd_strategy: str
+  Line 51: 'hd_strategy': self.hd_strategy,
+  Line 65: self.output_dir = Path("scripts/hd_strategy_test_results")
+  Line 216: 'hd_strategy': strategy,
+  Line 217: 'hd_strategy_crop_margin': 64,
+  Line 218: 'hd_strategy_crop_trigger_size': crop_trigger,
+  Line 219: 'hd_strategy_resize_limit': resize_limit,
+  Line 260: hd_strategy=strategy,
+  Line 274: hd_strategy=strategy,
+  Line 292: hd_strategy=strategy,
+  Line 351: strategy_results = [r for r in self.test_results if r.hd_strategy == strategy]
+  Line 59: class HDStrategyTester:
+  Line 534: tester = HDStrategyTester()
+  Line 39: hd_strategy: str
+  Line 51: 'hd_strategy': self.hd_strategy,
+  Line 65: self.output_dir = Path("scripts/hd_strategy_test_results")
+  Line 216: 'hd_strategy': strategy,
+  Line 217: 'hd_strategy_crop_margin': 64,
+  Line 218: 'hd_strategy_crop_trigger_size': crop_trigger,
+  Line 219: 'hd_strategy_resize_limit': resize_limit,
+  Line 260: hd_strategy=strategy,
+  Line 274: hd_strategy=strategy,
+  Line 292: hd_strategy=strategy,
+  Line 351: strategy_results = [r for r in self.test_results if r.hd_strategy == strategy]
+  Line 4: 验证ORIGINAL、CROP、RESIZE三种模式的正确性
+  Line 37: original_size: Tuple[int, int]
+  Line 49: 'original_size': self.original_size,
+  Line 69: self.strategies = ['ORIGINAL', 'CROP', 'RESIZE']
+  Line 144: def calculate_image_quality_score(self, original: Image.Image, result: Image.Image) -> float:
+  Line 148: if original.size != result.size:
+  Line 149: result = result.resize(original.size, Image.LANCZOS)
+  Line 152: orig_array = np.array(original.convert('RGB'))
+  Line 183: original_image, test_mask = self.create_test_image_with_watermark(size)
+  Line 186: original_path = self.output_dir / f"{test_name}_original.png"
+  Line 187: original_image.save(original_path)
+  Line 201: if strategy == 'ORIGINAL':
+  Line 233: image=original_image,
+  Line 251: size_preserved = result.result_image.size == original_image.size
+  Line 254: quality_score = self.calculate_image_quality_score(original_image, result.result_image)
+  Line 258: original_size=original_image.size,
+  Line 272: original_size=original_image.size,
+  Line 290: original_size=original_image.size,
+  Line 375: size_results = [r for r in self.test_results if r.original_size == size]
+  Line 478: report.append(f"  {result.test_name}: {result.original_size} -> {result.result_size}")
+  Line 490: # ORIGINAL策略分析
+  Line 491: original_stats = analysis['strategy_stats'].get('ORIGINAL', {})
+  Line 492: if original_stats.get('size_preserved_rate', 0) < 1.0:
+  Line 493: report.append("⚠️  ORIGINAL策略未能100%保持尺寸，需要检查实现")
+  Line 548: size_preservation_rate = analysis['strategy_stats'].get('ORIGINAL', {}).get('size_preserved_rate', 0)
+  Line 4: 验证ORIGINAL、CROP、RESIZE三种模式的正确性
+  Line 69: self.strategies = ['ORIGINAL', 'CROP', 'RESIZE']
+  Line 202: crop_trigger = 99999  # 足够大，永远不会触发
+  Line 204: elif strategy == 'CROP':
+  Line 205: crop_trigger = 800    # 较小的触发尺寸
+  Line 208: crop_trigger = 99999  # 不触发crop
+  Line 217: 'hd_strategy_crop_margin': 64,
+  Line 218: 'hd_strategy_crop_trigger_size': crop_trigger,
+  Line 495: # CROP策略分析
+  Line 496: crop_stats = analysis['strategy_stats'].get('CROP', {})
+  Line 497: if crop_stats.get('success_rate', 0) < 0.9:
+  Line 498: report.append("⚠️  CROP策略成功率偏低，需要优化分块逻辑")
+  Line 4: 验证ORIGINAL、CROP、RESIZE三种模式的正确性
+  Line 69: self.strategies = ['ORIGINAL', 'CROP', 'RESIZE']
+  Line 149: result = result.resize(original.size, Image.LANCZOS)
+  Line 203: resize_limit = 99999
+  Line 206: resize_limit = 2048
+  Line 207: else:  # RESIZE
+  Line 209: resize_limit = 1024   # 较小的resize限制
+  Line 219: 'hd_strategy_resize_limit': resize_limit,
+  Line 500: # RESIZE策略分析
+  Line 501: resize_stats = analysis['strategy_stats'].get('RESIZE', {})
+  Line 502: if resize_stats.get('size_preserved_rate', 0) > 0.1:
+  Line 503: report.append("⚠️  RESIZE策略应该会改变尺寸，但部分测试保持了原尺寸")
+  Line 202: crop_trigger = 99999  # 足够大，永远不会触发
+  Line 205: crop_trigger = 800    # 较小的触发尺寸
+  Line 208: crop_trigger = 99999  # 不触发crop
+  Line 218: 'hd_strategy_crop_trigger_size': crop_trigger,
+  Line 203: resize_limit = 99999
+  Line 206: resize_limit = 2048
+  Line 209: resize_limit = 1024   # 较小的resize限制
+  Line 219: 'hd_strategy_resize_limit': resize_limit,
+  Line 217: 'hd_strategy_crop_margin': 64,
+
+📄 scripts/debug/analyze_mask_quality.py:
+  Line 61: def compare_images(original_path, result_path, name="结果"):
+  Line 66: original = Image.open(original_path)
+  Line 69: print(f"   原始图像: {original.size}, {original.mode}")
+  Line 73: orig_array = np.array(original.convert('RGB'))
+  Line 101: def analyze_original_mask():
+  Line 103: original_mask_path = "/home/duolaameng/SAM_Remove/WatermarkRemover-AI/scripts/完美1500*2000mask透明通道.png"
+  Line 105: if Path(original_mask_path).exists():
+  Line 107: analyze_mask(original_mask_path, "原始Mask")
+  Line 109: print(f"\n❌ 原始mask文件不存在: {original_mask_path}")
+  Line 117: analyze_original_mask()
+  Line 132: original_image_path = "/home/duolaameng/SAM_Remove/WatermarkRemover-AI/scripts/IMG_0001-3.jpg"
+  Line 141: compare_images(original_image_path, result_path, f"修复结果 ({result_path})")
+
+📄 scripts/deprecated_apps/test_web_startup.py:
+  Line 134: print("  bash run_debug_app.sh                   # Use your original launcher")
+
+📄 interfaces/web/ui.py:
+  Line 153: inpaint_params['hd_strategy'] = st.sidebar.selectbox(
+  Line 161: if inpaint_params['hd_strategy'] == "CROP":
+  Line 162: inpaint_params['hd_strategy_crop_margin'] = st.sidebar.slider(
+  Line 166: inpaint_params['hd_strategy_crop_trigger_size'] = st.sidebar.slider(
+  Line 170: elif inpaint_params['hd_strategy'] == "RESIZE":
+  Line 171: inpaint_params['hd_strategy_resize_limit'] = st.sidebar.slider(
+  Line 214: inpaint_params['hd_strategy'] = st.sidebar.selectbox(
+  Line 221: if inpaint_params['hd_strategy'] == "CROP":
+  Line 222: inpaint_params['hd_strategy_crop_margin'] = st.sidebar.slider(
+  Line 226: inpaint_params['hd_strategy_crop_trigger_size'] = st.sidebar.slider(
+  Line 232: inpaint_params['hd_strategy_crop_margin'] = 64
+  Line 233: inpaint_params['hd_strategy_crop_trigger_size'] = 800
+  Line 236: if inpaint_params['hd_strategy'] == "RESIZE":
+  Line 237: inpaint_params['hd_strategy_resize_limit'] = st.sidebar.slider(
+  Line 242: inpaint_params['hd_strategy_resize_limit'] = 1600
+  Line 399: key_params = ['ldm_steps', 'hd_strategy', 'auto_model_selection']
+  Line 409: if inpaint_params.get('hd_strategy') == 'CROP':
+  Line 410: for key in ['hd_strategy_crop_margin', 'hd_strategy_crop_trigger_size']:
+  Line 413: elif inpaint_params.get('hd_strategy') == 'RESIZE':
+  Line 414: if 'hd_strategy_resize_limit' in inpaint_params:
+  Line 415: st.write(f"hd_strategy_resize_limit: {inpaint_params['hd_strategy_resize_limit']}")
+  Line 424: if key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'ORIGINAL':
+  Line 425: if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
+  Line 427: elif key == 'hd_strategy_resize_limit':
+  Line 431: elif key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'RESIZE':
+  Line 432: if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
+  Line 436: elif key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'CROP':
+  Line 437: if key == 'hd_strategy_resize_limit':
+  Line 153: inpaint_params['hd_strategy'] = st.sidebar.selectbox(
+  Line 161: if inpaint_params['hd_strategy'] == "CROP":
+  Line 162: inpaint_params['hd_strategy_crop_margin'] = st.sidebar.slider(
+  Line 166: inpaint_params['hd_strategy_crop_trigger_size'] = st.sidebar.slider(
+  Line 170: elif inpaint_params['hd_strategy'] == "RESIZE":
+  Line 171: inpaint_params['hd_strategy_resize_limit'] = st.sidebar.slider(
+  Line 214: inpaint_params['hd_strategy'] = st.sidebar.selectbox(
+  Line 221: if inpaint_params['hd_strategy'] == "CROP":
+  Line 222: inpaint_params['hd_strategy_crop_margin'] = st.sidebar.slider(
+  Line 226: inpaint_params['hd_strategy_crop_trigger_size'] = st.sidebar.slider(
+  Line 232: inpaint_params['hd_strategy_crop_margin'] = 64
+  Line 233: inpaint_params['hd_strategy_crop_trigger_size'] = 800
+  Line 236: if inpaint_params['hd_strategy'] == "RESIZE":
+  Line 237: inpaint_params['hd_strategy_resize_limit'] = st.sidebar.slider(
+  Line 242: inpaint_params['hd_strategy_resize_limit'] = 1600
+  Line 399: key_params = ['ldm_steps', 'hd_strategy', 'auto_model_selection']
+  Line 409: if inpaint_params.get('hd_strategy') == 'CROP':
+  Line 410: for key in ['hd_strategy_crop_margin', 'hd_strategy_crop_trigger_size']:
+  Line 413: elif inpaint_params.get('hd_strategy') == 'RESIZE':
+  Line 414: if 'hd_strategy_resize_limit' in inpaint_params:
+  Line 415: st.write(f"hd_strategy_resize_limit: {inpaint_params['hd_strategy_resize_limit']}")
+  Line 424: if key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'ORIGINAL':
+  Line 425: if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
+  Line 427: elif key == 'hd_strategy_resize_limit':
+  Line 431: elif key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'RESIZE':
+  Line 432: if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
+  Line 436: elif key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'CROP':
+  Line 437: if key == 'hd_strategy_resize_limit':
+  Line 155: ["CROP", "RESIZE", "ORIGINAL"],
+  Line 157: help="高分辨率处理策略: CROP=分块处理, RESIZE=缩放处理, ORIGINAL=原图处理"
+  Line 216: ["CROP", "RESIZE", "ORIGINAL"],
+  Line 348: original_image = Image.open(uploaded_file)
+  Line 349: st.session_state.original_image = original_image
+  Line 368: self._render_process_button(inference_manager, original_image, mask_model,
+  Line 373: self._render_results(processing_result, original_image, transparent, uploaded_file.name)
+  Line 424: if key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'ORIGINAL':
+  Line 426: st.write(f"{key}: {value} *(不适用于ORIGINAL策略)*")
+  Line 428: st.write(f"{key}: {value} *(不适用于ORIGINAL策略)*")
+  Line 450: def _render_process_button(self, inference_manager, original_image, mask_model,
+  Line 464: image=original_image,
+  Line 485: def _render_results(self, result, original_image, transparent, filename):
+  Line 492: original_display = original_image
+  Line 495: if original_display.size != result_display.size:
+  Line 496: result_display = ImageProcessor.resize_image(result_display, original_display.size)
+  Line 511: img1=original_display,
+  Line 513: label1="Original",
+  Line 566: help=f"Download original resolution mask ({mask_image.size[0]}×{mask_image.size[1]})"
+  Line 155: ["CROP", "RESIZE", "ORIGINAL"],
+  Line 157: help="高分辨率处理策略: CROP=分块处理, RESIZE=缩放处理, ORIGINAL=原图处理"
+  Line 161: if inpaint_params['hd_strategy'] == "CROP":
+  Line 162: inpaint_params['hd_strategy_crop_margin'] = st.sidebar.slider(
+  Line 163: "Crop Margin", 32, 128, 64, 16,
+  Line 166: inpaint_params['hd_strategy_crop_trigger_size'] = st.sidebar.slider(
+  Line 167: "Crop Trigger Size", 512, 2048, 1024, 64,
+  Line 216: ["CROP", "RESIZE", "ORIGINAL"],
+  Line 220: # 只在CROP策略下显示Crop Margin
+  Line 221: if inpaint_params['hd_strategy'] == "CROP":
+  Line 222: inpaint_params['hd_strategy_crop_margin'] = st.sidebar.slider(
+  Line 223: "Crop Margin", 32, 256, 64, 16,
+  Line 226: inpaint_params['hd_strategy_crop_trigger_size'] = st.sidebar.slider(
+  Line 227: "Crop Trigger Size", 512, 2048, 800, 64,
+  Line 232: inpaint_params['hd_strategy_crop_margin'] = 64
+  Line 233: inpaint_params['hd_strategy_crop_trigger_size'] = 800
+  Line 409: if inpaint_params.get('hd_strategy') == 'CROP':
+  Line 410: for key in ['hd_strategy_crop_margin', 'hd_strategy_crop_trigger_size']:
+  Line 425: if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
+  Line 432: if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
+  Line 436: elif key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'CROP':
+  Line 438: st.write(f"{key}: {value} *(不适用于CROP策略)*")
+  Line 155: ["CROP", "RESIZE", "ORIGINAL"],
+  Line 157: help="高分辨率处理策略: CROP=分块处理, RESIZE=缩放处理, ORIGINAL=原图处理"
+  Line 170: elif inpaint_params['hd_strategy'] == "RESIZE":
+  Line 171: inpaint_params['hd_strategy_resize_limit'] = st.sidebar.slider(
+  Line 172: "Resize Limit", 512, 2048, 2048, 64,
+  Line 216: ["CROP", "RESIZE", "ORIGINAL"],
+  Line 235: # 只在RESIZE策略下显示Resize Limit
+  Line 236: if inpaint_params['hd_strategy'] == "RESIZE":
+  Line 237: inpaint_params['hd_strategy_resize_limit'] = st.sidebar.slider(
+  Line 238: "Resize Limit", 512, 2048, 1600, 64,
+  Line 242: inpaint_params['hd_strategy_resize_limit'] = 1600
+  Line 413: elif inpaint_params.get('hd_strategy') == 'RESIZE':
+  Line 414: if 'hd_strategy_resize_limit' in inpaint_params:
+  Line 415: st.write(f"hd_strategy_resize_limit: {inpaint_params['hd_strategy_resize_limit']}")
+  Line 427: elif key == 'hd_strategy_resize_limit':
+  Line 431: elif key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'RESIZE':
+  Line 433: st.write(f"{key}: {value} *(不适用于RESIZE策略)*")
+  Line 437: if key == 'hd_strategy_resize_limit':
+  Line 496: result_display = ImageProcessor.resize_image(result_display, original_display.size)
+  Line 166: inpaint_params['hd_strategy_crop_trigger_size'] = st.sidebar.slider(
+  Line 226: inpaint_params['hd_strategy_crop_trigger_size'] = st.sidebar.slider(
+  Line 233: inpaint_params['hd_strategy_crop_trigger_size'] = 800
+  Line 410: for key in ['hd_strategy_crop_margin', 'hd_strategy_crop_trigger_size']:
+  Line 425: if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
+  Line 432: if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
+  Line 171: inpaint_params['hd_strategy_resize_limit'] = st.sidebar.slider(
+  Line 237: inpaint_params['hd_strategy_resize_limit'] = st.sidebar.slider(
+  Line 242: inpaint_params['hd_strategy_resize_limit'] = 1600
+  Line 414: if 'hd_strategy_resize_limit' in inpaint_params:
+  Line 415: st.write(f"hd_strategy_resize_limit: {inpaint_params['hd_strategy_resize_limit']}")
+  Line 427: elif key == 'hd_strategy_resize_limit':
+  Line 437: if key == 'hd_strategy_resize_limit':
+  Line 162: inpaint_params['hd_strategy_crop_margin'] = st.sidebar.slider(
+  Line 222: inpaint_params['hd_strategy_crop_margin'] = st.sidebar.slider(
+  Line 232: inpaint_params['hd_strategy_crop_margin'] = 64
+  Line 410: for key in ['hd_strategy_crop_margin', 'hd_strategy_crop_trigger_size']:
+  Line 425: if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
+  Line 432: if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
+
+📄 interfaces/web/main.py:
+  Line 47: if 'original_image' not in st.session_state:
+  Line 48: st.session_state.original_image = None
+
+📄 core/models/mat_processor.py:
+  Line 70: hd_strategy = config.get('hd_strategy', 'CROP')
+  Line 71: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 72: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 73: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 83: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 86: image_array, mask_array, hd_strategy_crop_margin
+  Line 88: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 90: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 107: hd_strategy=strategy_map.get(hd_strategy, self.HDStrategy.CROP),
+  Line 108: hd_strategy_crop_margin=hd_strategy_crop_margin,
+  Line 109: hd_strategy_crop_trigger_size=hd_strategy_crop_trigger_size,
+  Line 110: hd_strategy_resize_limit=hd_strategy_resize_limit,
+  Line 33: from iopaint.schema import HDStrategy, LDMSampler, InpaintRequest as Config
+  Line 41: self.HDStrategy = HDStrategy
+  Line 99: 'CROP': self.HDStrategy.CROP,
+  Line 100: 'RESIZE': self.HDStrategy.RESIZE,
+  Line 101: 'ORIGINAL': self.HDStrategy.ORIGINAL
+  Line 107: hd_strategy=strategy_map.get(hd_strategy, self.HDStrategy.CROP),
+  Line 70: hd_strategy = config.get('hd_strategy', 'CROP')
+  Line 71: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 72: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 73: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 83: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 86: image_array, mask_array, hd_strategy_crop_margin
+  Line 88: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 90: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 107: hd_strategy=strategy_map.get(hd_strategy, self.HDStrategy.CROP),
+  Line 108: hd_strategy_crop_margin=hd_strategy_crop_margin,
+  Line 109: hd_strategy_crop_trigger_size=hd_strategy_crop_trigger_size,
+  Line 110: hd_strategy_resize_limit=hd_strategy_resize_limit,
+  Line 101: 'ORIGINAL': self.HDStrategy.ORIGINAL
+  Line 70: hd_strategy = config.get('hd_strategy', 'CROP')
+  Line 71: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 72: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 83: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 85: image_array, mask_array = self._crop_for_inpainting(
+  Line 86: image_array, mask_array, hd_strategy_crop_margin
+  Line 99: 'CROP': self.HDStrategy.CROP,
+  Line 107: hd_strategy=strategy_map.get(hd_strategy, self.HDStrategy.CROP),
+  Line 108: hd_strategy_crop_margin=hd_strategy_crop_margin,
+  Line 109: hd_strategy_crop_trigger_size=hd_strategy_crop_trigger_size,
+  Line 128: def _crop_for_inpainting(self, image: np.ndarray, mask: np.ndarray, margin: int) -> tuple:
+  Line 153: cropped_image = image[y:y+h, x:x+w]
+  Line 154: cropped_mask = mask[y:y+h, x:x+w]
+  Line 156: return cropped_image, cropped_mask
+  Line 73: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 88: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 90: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 92: image_array = cv2.resize(image_array, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+  Line 93: mask_array = cv2.resize(mask_array, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
+  Line 100: 'RESIZE': self.HDStrategy.RESIZE,
+  Line 110: hd_strategy_resize_limit=hd_strategy_resize_limit,
+  Line 118: result = cv2.resize(result, (image_array.shape[1], image_array.shape[0]),
+  Line 72: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 83: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 109: hd_strategy_crop_trigger_size=hd_strategy_crop_trigger_size,
+  Line 73: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 88: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 90: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 110: hd_strategy_resize_limit=hd_strategy_resize_limit,
+  Line 71: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 86: image_array, mask_array, hd_strategy_crop_margin
+  Line 108: hd_strategy_crop_margin=hd_strategy_crop_margin,
+
+📄 core/models/fcf_processor.py:
+  Line 70: hd_strategy = config.get('hd_strategy', 'CROP')
+  Line 71: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 72: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 73: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 83: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 86: image_array, mask_array, hd_strategy_crop_margin
+  Line 88: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 90: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 107: hd_strategy=strategy_map.get(hd_strategy, self.HDStrategy.CROP),
+  Line 108: hd_strategy_crop_margin=hd_strategy_crop_margin,
+  Line 109: hd_strategy_crop_trigger_size=hd_strategy_crop_trigger_size,
+  Line 110: hd_strategy_resize_limit=hd_strategy_resize_limit,
+  Line 33: from iopaint.schema import HDStrategy, LDMSampler, InpaintRequest as Config
+  Line 41: self.HDStrategy = HDStrategy
+  Line 99: 'CROP': self.HDStrategy.CROP,
+  Line 100: 'RESIZE': self.HDStrategy.RESIZE,
+  Line 101: 'ORIGINAL': self.HDStrategy.ORIGINAL
+  Line 107: hd_strategy=strategy_map.get(hd_strategy, self.HDStrategy.CROP),
+  Line 70: hd_strategy = config.get('hd_strategy', 'CROP')
+  Line 71: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 72: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 73: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 83: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 86: image_array, mask_array, hd_strategy_crop_margin
+  Line 88: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 90: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 107: hd_strategy=strategy_map.get(hd_strategy, self.HDStrategy.CROP),
+  Line 108: hd_strategy_crop_margin=hd_strategy_crop_margin,
+  Line 109: hd_strategy_crop_trigger_size=hd_strategy_crop_trigger_size,
+  Line 110: hd_strategy_resize_limit=hd_strategy_resize_limit,
+  Line 101: 'ORIGINAL': self.HDStrategy.ORIGINAL
+  Line 70: hd_strategy = config.get('hd_strategy', 'CROP')
+  Line 71: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 72: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 83: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 85: image_array, mask_array = self._crop_for_inpainting(
+  Line 86: image_array, mask_array, hd_strategy_crop_margin
+  Line 99: 'CROP': self.HDStrategy.CROP,
+  Line 107: hd_strategy=strategy_map.get(hd_strategy, self.HDStrategy.CROP),
+  Line 108: hd_strategy_crop_margin=hd_strategy_crop_margin,
+  Line 109: hd_strategy_crop_trigger_size=hd_strategy_crop_trigger_size,
+  Line 128: def _crop_for_inpainting(self, image: np.ndarray, mask: np.ndarray, margin: int) -> tuple:
+  Line 153: cropped_image = image[y:y+h, x:x+w]
+  Line 154: cropped_mask = mask[y:y+h, x:x+w]
+  Line 156: return cropped_image, cropped_mask
+  Line 73: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 88: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 90: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 92: image_array = cv2.resize(image_array, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+  Line 93: mask_array = cv2.resize(mask_array, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
+  Line 100: 'RESIZE': self.HDStrategy.RESIZE,
+  Line 110: hd_strategy_resize_limit=hd_strategy_resize_limit,
+  Line 118: result = cv2.resize(result, (image_array.shape[1], image_array.shape[0]),
+  Line 72: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 83: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 109: hd_strategy_crop_trigger_size=hd_strategy_crop_trigger_size,
+  Line 73: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 88: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 90: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 110: hd_strategy_resize_limit=hd_strategy_resize_limit,
+  Line 71: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 86: image_array, mask_array, hd_strategy_crop_margin
+  Line 108: hd_strategy_crop_margin=hd_strategy_crop_margin,
+
+📄 core/models/lama_processor.py:
+  Line 96: hd_strategy = config.get('hd_strategy', 'CROP')
+  Line 97: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 98: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 99: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 109: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 112: image_array, mask_array, hd_strategy_crop_margin
+  Line 114: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 116: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 96: hd_strategy = config.get('hd_strategy', 'CROP')
+  Line 97: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 98: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 99: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 109: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 112: image_array, mask_array, hd_strategy_crop_margin
+  Line 114: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 116: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 96: hd_strategy = config.get('hd_strategy', 'CROP')
+  Line 97: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 98: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 109: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 111: image_array, mask_array = self._crop_for_inpainting(
+  Line 112: image_array, mask_array, hd_strategy_crop_margin
+  Line 153: def _crop_for_inpainting(self, image: np.ndarray, mask: np.ndarray, margin: int) -> tuple:
+  Line 178: cropped_image = image[y:y+h, x:x+w]
+  Line 179: cropped_mask = mask[y:y+h, x:x+w]
+  Line 181: return cropped_image, cropped_mask
+  Line 99: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 114: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 116: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 118: image_array = cv2.resize(image_array, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+  Line 119: mask_array = cv2.resize(mask_array, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
+  Line 144: inpainted = cv2.resize(inpainted, (image_array.shape[1], image_array.shape[0]),
+  Line 98: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 109: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 99: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 114: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 116: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 97: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 112: image_array, mask_array, hd_strategy_crop_margin
+
+📄 core/models/mask_generators.py:
+  Line 129: pred_crop = pred_mask[pad_top:pad_top+new_h, pad_left:pad_left+new_w]
+  Line 130: pred_mask = cv2.resize(pred_crop, (orig_w, orig_h), interpolation=cv2.INTER_LINEAR)
+  Line 130: pred_mask = cv2.resize(pred_crop, (orig_w, orig_h), interpolation=cv2.INTER_LINEAR)
+
+📄 core/models/base_model.py:
+  Line 128: mask = mask.resize(image.size, Image.LANCZOS)
+
+📄 core/models/zits_processor.py:
+  Line 70: hd_strategy = config.get('hd_strategy', 'CROP')
+  Line 71: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 72: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 73: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 83: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 86: image_array, mask_array, hd_strategy_crop_margin
+  Line 88: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 90: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 107: hd_strategy=strategy_map.get(hd_strategy, self.HDStrategy.CROP),
+  Line 108: hd_strategy_crop_margin=hd_strategy_crop_margin,
+  Line 109: hd_strategy_crop_trigger_size=hd_strategy_crop_trigger_size,
+  Line 110: hd_strategy_resize_limit=hd_strategy_resize_limit,
+  Line 33: from iopaint.schema import HDStrategy, LDMSampler, InpaintRequest as Config
+  Line 41: self.HDStrategy = HDStrategy
+  Line 99: 'CROP': self.HDStrategy.CROP,
+  Line 100: 'RESIZE': self.HDStrategy.RESIZE,
+  Line 101: 'ORIGINAL': self.HDStrategy.ORIGINAL
+  Line 107: hd_strategy=strategy_map.get(hd_strategy, self.HDStrategy.CROP),
+  Line 70: hd_strategy = config.get('hd_strategy', 'CROP')
+  Line 71: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 72: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 73: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 83: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 86: image_array, mask_array, hd_strategy_crop_margin
+  Line 88: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 90: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 107: hd_strategy=strategy_map.get(hd_strategy, self.HDStrategy.CROP),
+  Line 108: hd_strategy_crop_margin=hd_strategy_crop_margin,
+  Line 109: hd_strategy_crop_trigger_size=hd_strategy_crop_trigger_size,
+  Line 110: hd_strategy_resize_limit=hd_strategy_resize_limit,
+  Line 101: 'ORIGINAL': self.HDStrategy.ORIGINAL
+  Line 70: hd_strategy = config.get('hd_strategy', 'CROP')
+  Line 71: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 72: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 83: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 85: image_array, mask_array = self._crop_for_inpainting(
+  Line 86: image_array, mask_array, hd_strategy_crop_margin
+  Line 99: 'CROP': self.HDStrategy.CROP,
+  Line 107: hd_strategy=strategy_map.get(hd_strategy, self.HDStrategy.CROP),
+  Line 108: hd_strategy_crop_margin=hd_strategy_crop_margin,
+  Line 109: hd_strategy_crop_trigger_size=hd_strategy_crop_trigger_size,
+  Line 128: def _crop_for_inpainting(self, image: np.ndarray, mask: np.ndarray, margin: int) -> tuple:
+  Line 153: cropped_image = image[y:y+h, x:x+w]
+  Line 154: cropped_mask = mask[y:y+h, x:x+w]
+  Line 156: return cropped_image, cropped_mask
+  Line 73: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 88: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 90: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 92: image_array = cv2.resize(image_array, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+  Line 93: mask_array = cv2.resize(mask_array, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
+  Line 100: 'RESIZE': self.HDStrategy.RESIZE,
+  Line 110: hd_strategy_resize_limit=hd_strategy_resize_limit,
+  Line 118: result = cv2.resize(result, (image_array.shape[1], image_array.shape[0]),
+  Line 72: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+  Line 83: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+  Line 109: hd_strategy_crop_trigger_size=hd_strategy_crop_trigger_size,
+  Line 73: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  Line 88: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+  Line 90: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  Line 110: hd_strategy_resize_limit=hd_strategy_resize_limit,
+  Line 71: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+  Line 86: image_array, mask_array, hd_strategy_crop_margin
+  Line 108: hd_strategy_crop_margin=hd_strategy_crop_margin,
+
+📄 core/models/iopaint_processor.py:
+  Line 201: hd_strategy=strategy_map.get(params.get('hd_strategy', 'CROP')),
+  Line 202: hd_strategy_crop_margin=params.get('hd_strategy_crop_margin', 64),
+  Line 203: hd_strategy_crop_trigger_size=params.get('hd_strategy_crop_trigger_size', 1024),
+  Line 204: hd_strategy_resize_limit=params.get('hd_strategy_resize_limit', 2048),
+  Line 214: 'hd_strategy': 'CROP',
+  Line 215: 'hd_strategy_crop_margin': 64,
+  Line 216: 'hd_strategy_crop_trigger_size': 1024,
+  Line 217: 'hd_strategy_resize_limit': 2048,
+  Line 40: from iopaint.schema import HDStrategy, LDMSampler, InpaintRequest as Config
+  Line 55: self.HDStrategy = HDStrategy
+  Line 193: 'CROP': self.HDStrategy.CROP,
+  Line 194: 'RESIZE': self.HDStrategy.RESIZE,
+  Line 195: 'ORIGINAL': self.HDStrategy.ORIGINAL
+  Line 201: hd_strategy=strategy_map.get(params.get('hd_strategy', 'CROP')),
+  Line 202: hd_strategy_crop_margin=params.get('hd_strategy_crop_margin', 64),
+  Line 203: hd_strategy_crop_trigger_size=params.get('hd_strategy_crop_trigger_size', 1024),
+  Line 204: hd_strategy_resize_limit=params.get('hd_strategy_resize_limit', 2048),
+  Line 214: 'hd_strategy': 'CROP',
+  Line 215: 'hd_strategy_crop_margin': 64,
+  Line 216: 'hd_strategy_crop_trigger_size': 1024,
+  Line 217: 'hd_strategy_resize_limit': 2048,
+  Line 195: 'ORIGINAL': self.HDStrategy.ORIGINAL
+  Line 193: 'CROP': self.HDStrategy.CROP,
+  Line 201: hd_strategy=strategy_map.get(params.get('hd_strategy', 'CROP')),
+  Line 202: hd_strategy_crop_margin=params.get('hd_strategy_crop_margin', 64),
+  Line 203: hd_strategy_crop_trigger_size=params.get('hd_strategy_crop_trigger_size', 1024),
+  Line 214: 'hd_strategy': 'CROP',
+  Line 215: 'hd_strategy_crop_margin': 64,
+  Line 216: 'hd_strategy_crop_trigger_size': 1024,
+  Line 194: 'RESIZE': self.HDStrategy.RESIZE,
+  Line 204: hd_strategy_resize_limit=params.get('hd_strategy_resize_limit', 2048),
+  Line 217: 'hd_strategy_resize_limit': 2048,
+  Line 203: hd_strategy_crop_trigger_size=params.get('hd_strategy_crop_trigger_size', 1024),
+  Line 216: 'hd_strategy_crop_trigger_size': 1024,
+  Line 204: hd_strategy_resize_limit=params.get('hd_strategy_resize_limit', 2048),
+  Line 217: 'hd_strategy_resize_limit': 2048,
+  Line 202: hd_strategy_crop_margin=params.get('hd_strategy_crop_margin', 64),
+  Line 215: 'hd_strategy_crop_margin': 64,
+
+📄 core/utils/image_utils.py:
+  Line 133: def get_filename_base(original_filename: str) -> str:
+  Line 135: return Path(original_filename).stem
+  Line 19: def resize_image(image: Image.Image, target_size: Tuple[int, int]) -> Image.Image:
+  Line 21: return image.resize(target_size, Image.LANCZOS)
+
+📄 core/processors/watermark_processor.py:
+  Line 232: 'hd_strategy': 'CROP',
+  Line 233: 'hd_strategy_crop_margin': 64,
+  Line 234: 'hd_strategy_crop_trigger_size': 1024,
+  Line 235: 'hd_strategy_resize_limit': 2048,
+  Line 232: 'hd_strategy': 'CROP',
+  Line 233: 'hd_strategy_crop_margin': 64,
+  Line 234: 'hd_strategy_crop_trigger_size': 1024,
+  Line 235: 'hd_strategy_resize_limit': 2048,
+  Line 232: 'hd_strategy': 'CROP',
+  Line 233: 'hd_strategy_crop_margin': 64,
+  Line 234: 'hd_strategy_crop_trigger_size': 1024,
+  Line 235: 'hd_strategy_resize_limit': 2048,
+  Line 357: mask = mask.resize(image.size, Image.LANCZOS)
+  Line 234: 'hd_strategy_crop_trigger_size': 1024,
+  Line 235: 'hd_strategy_resize_limit': 2048,
+  Line 233: 'hd_strategy_crop_margin': 64,
+
+📄 web_config.yaml:
+  Line 56: crop_trigger_size: 512
+  Line 57: crop_margin: 64
+  Line 56: crop_trigger_size: 512
+  Line 57: crop_margin: 64
+
+📄 config/powerpaint_config.yaml:
+  Line 77: hd_strategy: "CROP"
+  Line 78: hd_strategy_crop_margin: 64
+  Line 79: hd_strategy_crop_trigger_size: 800
+  Line 80: hd_strategy_resize_limit: 1600
+  Line 77: hd_strategy: "CROP"
+  Line 78: hd_strategy_crop_margin: 64
+  Line 79: hd_strategy_crop_trigger_size: 800
+  Line 80: hd_strategy_resize_limit: 1600
+  Line 63: preserve_original_resolution: true          # 🎯 保持原始分辨率
+  Line 133: preserve_original_resolution: true          # 保持原始分辨率
+  Line 61: crop_trigger_size: 1024                     # 提高到1024，减少不必要的crop
+  Line 62: crop_margin: 64                             # Margin around mask regions
+  Line 77: hd_strategy: "CROP"
+  Line 78: hd_strategy_crop_margin: 64
+  Line 79: hd_strategy_crop_trigger_size: 800
+  Line 100: show_crop_settings: true
+  Line 107: crop_trigger_size: [256, 1024]
+  Line 108: crop_margin: [32, 128]
+  Line 64: high_quality_resize: true                   # 🎯 高质量resize
+  Line 80: hd_strategy_resize_limit: 1600
+  Line 134: use_high_quality_resize: true               # 高质量resize
+  Line 135: avoid_unnecessary_resize: true              # 避免不必要的resize操作
+  Line 61: crop_trigger_size: 1024                     # 提高到1024，减少不必要的crop
+  Line 79: hd_strategy_crop_trigger_size: 800
+  Line 107: crop_trigger_size: [256, 1024]
+  Line 80: hd_strategy_resize_limit: 1600
+  Line 62: crop_margin: 64                             # Margin around mask regions
+  Line 78: hd_strategy_crop_margin: 64
+  Line 108: crop_margin: [32, 128]
+
+📄 config/iopaint_config.yaml:
+  Line 61: hd_strategy: "CROP"                    # CROP, RESIZE, ORIGINAL
+  Line 62: hd_strategy_crop_margin: 64
+  Line 63: hd_strategy_crop_trigger_size: 1024     # 高清处理优化
+  Line 64: hd_strategy_resize_limit: 2048
+  Line 61: hd_strategy: "CROP"                    # CROP, RESIZE, ORIGINAL
+  Line 62: hd_strategy_crop_margin: 64
+  Line 63: hd_strategy_crop_trigger_size: 1024     # 高清处理优化
+  Line 64: hd_strategy_resize_limit: 2048
+  Line 61: hd_strategy: "CROP"                    # CROP, RESIZE, ORIGINAL
+  Line 61: hd_strategy: "CROP"                    # CROP, RESIZE, ORIGINAL
+  Line 62: hd_strategy_crop_margin: 64
+  Line 63: hd_strategy_crop_trigger_size: 1024     # 高清处理优化
+  Line 98: crop_trigger_size: [512, 2048]
+  Line 99: crop_margin: [32, 128]
+  Line 61: hd_strategy: "CROP"                    # CROP, RESIZE, ORIGINAL
+  Line 64: hd_strategy_resize_limit: 2048
+  Line 63: hd_strategy_crop_trigger_size: 1024     # 高清处理优化
+  Line 98: crop_trigger_size: [512, 2048]
+  Line 64: hd_strategy_resize_limit: 2048
+  Line 62: hd_strategy_crop_margin: 64
+  Line 99: crop_margin: [32, 128]
+
+⚙️  配置文件分析
+----------------------------------------
+
+📄 config/config.py:
+  Line 33: default_hd_strategy: str = "CROP"
+  Line 34: default_crop_margin: int = 64
+  Line 35: default_crop_trigger_size: int = 800
+  Line 36: default_resize_limit: int = 1600
+  Line 119: if 'hd_strategy' in validated:
+  Line 120: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 121: validated['hd_strategy'] = 'CROP'
+  Line 132: # 验证crop参数
+  Line 133: if 'hd_strategy_crop_margin' in validated:
+  Line 134: validated['hd_strategy_crop_margin'] = max(32, min(128, validated['hd_strategy_crop_margin']))
+  Line 136: if 'hd_strategy_crop_trigger_size' in validated:
+  Line 137: validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+  Line 139: # 验证resize参数
+  Line 140: if 'hd_strategy_resize_limit' in validated:
+  Line 141: validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+  Line 154: if 'hd_strategy' in validated:
+  Line 155: if validated['hd_strategy'] not in ['CROP', 'RESIZE', 'ORIGINAL']:
+  Line 156: validated['hd_strategy'] = 'CROP'
+  Line 158: # 验证crop参数
+  Line 159: if 'hd_strategy_crop_margin' in validated:
+  Line 160: validated['hd_strategy_crop_margin'] = max(32, min(256, validated['hd_strategy_crop_margin']))
+  Line 162: if 'hd_strategy_crop_trigger_size' in validated:
+  Line 163: validated['hd_strategy_crop_trigger_size'] = max(512, min(2048, validated['hd_strategy_crop_trigger_size']))
+  Line 165: # 验证resize参数
+  Line 166: if 'hd_strategy_resize_limit' in validated:
+  Line 167: validated['hd_strategy_resize_limit'] = max(512, min(2048, validated['hd_strategy_resize_limit']))
+  Line 198: 'hd_strategy': 'CROP',
+  Line 199: 'hd_strategy_crop_margin': 64,
+  Line 200: 'hd_strategy_crop_trigger_size': 1024,
+  Line 201: 'hd_strategy_resize_limit': 2048,
+  Line 209: 'hd_strategy': self.app_config.default_hd_strategy,
+  Line 210: 'hd_strategy_crop_margin': self.app_config.default_crop_margin,
+  Line 211: 'hd_strategy_crop_trigger_size': self.app_config.default_crop_trigger_size,
+  Line 212: 'hd_strategy_resize_limit': self.app_config.default_resize_limit,
+
+📄 config/iopaint_config.yaml:
+  Line 61: hd_strategy: "CROP"                    # CROP, RESIZE, ORIGINAL
+  Line 62: hd_strategy_crop_margin: 64
+  Line 63: hd_strategy_crop_trigger_size: 1024     # 高清处理优化
+  Line 64: hd_strategy_resize_limit: 2048
+  Line 98: crop_trigger_size: [512, 2048]
+  Line 99: crop_margin: [32, 128]
+
+📄 config/powerpaint_config.yaml:
+  Line 61: crop_trigger_size: 1024                     # 提高到1024，减少不必要的crop
+  Line 62: crop_margin: 64                             # Margin around mask regions
+  Line 64: high_quality_resize: true                   # 🎯 高质量resize
+  Line 77: hd_strategy: "CROP"
+  Line 78: hd_strategy_crop_margin: 64
+  Line 79: hd_strategy_crop_trigger_size: 800
+  Line 80: hd_strategy_resize_limit: 1600
+  Line 100: show_crop_settings: true
+  Line 107: crop_trigger_size: [256, 1024]
+  Line 108: crop_margin: [32, 128]
+  Line 134: use_high_quality_resize: true               # 高质量resize
+  Line 135: avoid_unnecessary_resize: true              # 避免不必要的resize操作
+
+📄 web_config.yaml:
+  Line 56: crop_trigger_size: 512
+  Line 57: crop_margin: 64
+
+🔧 处理器实现分析
+----------------------------------------
+
+📄 core/models/iopaint_processor.py:
+  HD策略使用:
+    Line 201: hd_strategy=strategy_map.get(params.get('hd_strategy', 'CROP')),
+    Line 202: hd_strategy_crop_margin=params.get('hd_strategy_crop_margin', 64),
+    Line 203: hd_strategy_crop_trigger_size=params.get('hd_strategy_crop_trigger_size', 1024),
+    Line 204: hd_strategy_resize_limit=params.get('hd_strategy_resize_limit', 2048),
+    Line 214: 'hd_strategy': 'CROP',
+    Line 215: 'hd_strategy_crop_margin': 64,
+    Line 216: 'hd_strategy_crop_trigger_size': 1024,
+    Line 217: 'hd_strategy_resize_limit': 2048,
+  策略映射:
+    Line 193: 'CROP': self.HDStrategy.CROP,
+    Line 194: 'RESIZE': self.HDStrategy.RESIZE,
+    Line 195: 'ORIGINAL': self.HDStrategy.ORIGINAL
+    Line 201: hd_strategy=strategy_map.get(params.get('hd_strategy', 'CROP')),
+    Line 214: 'hd_strategy': 'CROP',
+
+📄 core/models/lama_processor.py:
+  HD策略使用:
+    Line 96: hd_strategy = config.get('hd_strategy', 'CROP')
+    Line 97: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+    Line 98: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+    Line 99: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+    Line 109: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+    Line 112: image_array, mask_array, hd_strategy_crop_margin
+    Line 114: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+    Line 116: scale = hd_strategy_resize_limit / max(image_array.shape[:2])
+  配置构建:
+    Line 96: hd_strategy = config.get('hd_strategy', 'CROP')
+    Line 97: hd_strategy_crop_margin = config.get('hd_strategy_crop_margin', 64)
+    Line 98: hd_strategy_crop_trigger_size = config.get('hd_strategy_crop_trigger_size', 1024)
+    Line 99: hd_strategy_resize_limit = config.get('hd_strategy_resize_limit', 2048)
+  策略映射:
+    Line 96: hd_strategy = config.get('hd_strategy', 'CROP')
+    Line 109: if hd_strategy == 'CROP' and max(image_array.shape[:2]) > hd_strategy_crop_trigger_size:
+    Line 114: elif hd_strategy == 'RESIZE' and max(image_array.shape[:2]) > hd_strategy_resize_limit:
+
+🔗 IOPaint集成分析
+----------------------------------------
+iopaint_schema:
+  installed: False
+  error: No module named 'iopaint'
+import_error: attempted relative import with no known parent package
+
+🩺 问题诊断
+----------------------------------------
+❌ IOPaint未正确安装或导入失败
+
+💡 建议
+----------------------------------------
+1. 确保IOPaint正确安装: pip install iopaint
+2. 验证HD策略配置参数完整性
+3. 检查处理器中的策略映射是否正确
+4. 运行测试脚本验证功能
+
+================================================================================

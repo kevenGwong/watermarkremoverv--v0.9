@@ -185,6 +185,13 @@ class ParameterPanel:
                     "lama": "最快速度，适合小水印"
                 }
                 st.sidebar.write(f"**{model_descriptions.get(specific_model, '')}**")
+            
+            # 模型选择变化提示
+            if 'last_parameters' in st.session_state:
+                last_model = st.session_state.last_parameters.get('inpaint_params', {}).get('force_model', 'auto')
+                if last_model != specific_model:
+                    st.sidebar.warning(f"🔄 模型已切换: {last_model} → {specific_model}")
+                    st.sidebar.write("**请重新处理以查看新模型效果**")
         
         else:
             # LaMA specific parameters
@@ -281,6 +288,49 @@ class MainInterface:
         self.config_manager = config_manager
         self.parameter_panel = ParameterPanel(config_manager)
     
+    def _check_parameter_changes(self, mask_model, mask_params, inpaint_params, performance_params, transparent):
+        """检查参数是否发生变化，如果有变化则清除旧结果以触发界面刷新"""
+        current_params = {
+            'mask_model': mask_model,
+            'mask_params': mask_params.copy(),
+            'inpaint_params': inpaint_params.copy(),
+            'performance_params': performance_params.copy(),
+            'transparent': transparent
+        }
+        
+        # 检查是否有之前的参数状态
+        if 'last_parameters' in st.session_state:
+            last_params = st.session_state.last_parameters
+            
+            # 比较关键参数是否发生变化
+            key_changes = []
+            
+            # 检查模型选择变化
+            if last_params.get('mask_model') != current_params['mask_model']:
+                key_changes.append('mask_model')
+            
+            # 检查inpaint模型变化
+            if last_params.get('inpaint_params', {}).get('inpaint_model') != current_params['inpaint_params'].get('inpaint_model'):
+                key_changes.append('inpaint_model')
+            
+            # 检查具体模型选择变化（IOPaint的force_model）
+            if last_params.get('inpaint_params', {}).get('force_model') != current_params['inpaint_params'].get('force_model'):
+                key_changes.append('specific_model')
+            
+            # 检查透明模式变化
+            if last_params.get('transparent') != current_params['transparent']:
+                key_changes.append('transparent_mode')
+            
+            # 如果有关键参数变化，清除旧结果
+            if key_changes:
+                if 'processing_result' in st.session_state:
+                    del st.session_state.processing_result
+                    # 显示参数变化提示
+                    st.info(f"🔄 检测到参数变化: {', '.join(key_changes)}. 请重新处理以查看新结果。")
+        
+        # 更新当前参数状态（不包括处理结果）
+        st.session_state.current_parameters = current_params
+    
     def render(self, inference_manager, processing_result=None):
         """渲染主界面"""
         st.title("🔬 AI Watermark Remover - Debug Edition")
@@ -300,6 +350,9 @@ class MainInterface:
             
             # 获取参数
             mask_model, mask_params, inpaint_params, performance_params, transparent = self.parameter_panel.render()
+            
+            # 检查参数变化，如果有变化则清除之前的结果
+            self._check_parameter_changes(mask_model, mask_params, inpaint_params, performance_params, transparent)
             
             # 显示参数总结
             self._render_parameter_summary(mask_model, mask_params, inpaint_params, performance_params, transparent)
@@ -408,15 +461,23 @@ class MainInterface:
                     # 使用新的模块化接口
                     try:
                         result = process_image(
-                        image=original_image,
-                        mask_model=mask_model,
-                        mask_params=mask_params,
-                        inpaint_params=inpaint_params,
-                        performance_params=performance_params,
-                        transparent=transparent
-                    )
-                    st.session_state.processing_result = result
-                    st.rerun()
+                            image=original_image,
+                            mask_model=mask_model,
+                            mask_params=mask_params,
+                            inpaint_params=inpaint_params,
+                            performance_params=performance_params,
+                            transparent=transparent
+                        )
+                        st.session_state.processing_result = result
+                        # 保存当前参数状态
+                        st.session_state.last_parameters = {
+                            'mask_model': mask_model,
+                            'mask_params': mask_params.copy(),
+                            'inpaint_params': inpaint_params.copy(),
+                            'performance_params': performance_params.copy(),
+                            'transparent': transparent
+                        }
+                        st.rerun()
                     except Exception as e:
                         st.error(f"❌ Processing failed: {str(e)}")
                         return
@@ -480,8 +541,8 @@ class MainInterface:
         
         # 下载选项
         if result.result_image:
-        st.subheader("📥 Download Results")
-        self._render_download_section(result.result_image, filename)
+            st.subheader("📥 Download Results")
+            self._render_download_section(result.result_image, filename)
         else:
             st.warning("⚠️ No result image available for download")
     
