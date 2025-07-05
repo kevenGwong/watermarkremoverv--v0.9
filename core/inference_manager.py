@@ -84,7 +84,7 @@ class InferenceManager:
             
             # 执行inpainting
             result_array = self.unified_processor.predict_with_model(
-                model_name, image, mask, inpaint_params
+                image, mask, inpaint_params
             )
             
             # 创建结果图像
@@ -214,6 +214,19 @@ class InferenceManager:
         if self.unified_processor:
             return self.unified_processor.is_model_loaded(model_name)
         return False
+    
+    def get_status(self) -> Dict[str, Any]:
+        """获取推理管理器状态"""
+        return {
+            'processor_loaded': self.unified_processor is not None,
+            'available_models': self.get_available_models(),
+            'current_model': self.get_current_model(),
+            'mask_generators': {
+                'custom': self.custom_mask_generator is not None,
+                'florence': self.florence_mask_generator is not None,
+                'fallback': self.fallback_mask_generator is not None
+            }
+        }
     
     def get_system_info(self) -> Dict[str, Any]:
         """获取系统信息"""

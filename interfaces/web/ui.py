@@ -21,7 +21,7 @@ class ParameterPanel:
     def __init__(self, config_manager: ConfigManager):
         self.config_manager = config_manager
     
-    def render(self) -> Tuple[str, Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+    def render(self) -> Tuple[str, Dict[str, Any], Dict[str, Any], Dict[str, Any], bool]:
         """渲染参数面板"""
         st.sidebar.header("🔬 Debug Parameters")
         
@@ -38,7 +38,14 @@ class ParameterPanel:
         # 性能选项
         performance_params = self._render_performance_section()
         
-        return mask_model, mask_params, inpaint_params, performance_params
+        # 透明模式选项
+        transparent = st.sidebar.checkbox(
+            "Transparent Mode",
+            value=False,
+            help="生成透明背景而非inpainting"
+        )
+        
+        return mask_model, mask_params, inpaint_params, performance_params, transparent
     
     def _render_mask_section(self) -> Tuple[str, Dict[str, Any]]:
         """渲染mask生成部分"""
@@ -47,6 +54,7 @@ class ParameterPanel:
             "Mask Model",
             ["custom", "upload"],
             index=0,
+            key="mask_model_select",
             help="选择mask生成方式: custom=智能检测, upload=手动上传"
         )
         
@@ -67,19 +75,8 @@ class ParameterPanel:
                 help="膨胀迭代次数"
             )
 
-            mask_params['detection_prompt'] = st.sidebar.selectbox(
-                "Detection Prompt",
-                ["watermark", "logo", "text overlay", "signature", "copyright mark"],
-                help="检测目标类型描述"
-            )
-            mask_params['max_bbox_percent'] = st.sidebar.slider(
-                "Max BBox Percent", 1.0, 50.0, 10.0, 1.0,
-                help="最大检测区域百分比"
-            )
-            mask_params['confidence_threshold'] = st.sidebar.slider(
-                "Confidence Threshold", 0.1, 0.9, 0.3, 0.05,
-                help="检测置信度阈值"
-            )
+            # Custom model uses direct neural network inference, no prompt needed
+            st.sidebar.info("ℹ️ 使用自定义分割模型直接检测水印，无需提示词")
         else:  # upload
             st.sidebar.write("**Upload Custom Mask:**")
             uploaded_mask = st.sidebar.file_uploader(
@@ -114,119 +111,56 @@ class ParameterPanel:
         # Inpainting model selection - 新的IOPaint模型
         inpaint_model = st.sidebar.selectbox(
             "Inpainting Model",
-            ["iopaint", "lama"],
-            index=0,  # 默认选择 IOPaint
-            format_func=lambda x: "IOPaint (ZITS/MAT/FCF)" if x == "iopaint" else "LaMA (Fast)",
-            help="Choose inpainting model: IOPaint supports ZITS/MAT/FCF models, LaMA for speed"
+            ["zits", "mat", "fcf", "lama"],
+            index=0,
+            key="inpaint_model_select",
+            format_func=lambda x: x.upper(),
+            help="Direct model selection: ZITS=结构保持, MAT=高质量, FCF=平衡, LaMA=快速"
         )
-        inpaint_params['inpaint_model'] = inpaint_model
+        inpaint_params['model_name'] = inpaint_model
         
-        if inpaint_model == "iopaint":
-            # IOPaint specific parameters
-            st.sidebar.write("**IOPaint Model Parameters:**")
-            
-            # 具体模型选择
-            specific_model = st.sidebar.selectbox(
-                "Specific Model",
-                ["auto", "zits", "mat", "fcf", "lama"],
-                index=0,
-                help="auto: 智能选择最佳模型 | zits: 最佳结构保持 | mat: 最佳质量 | fcf: 快速修复 | lama: 最快速度"
-            )
-            
-            if specific_model != "auto":
-                inpaint_params['force_model'] = specific_model
-                inpaint_params['auto_model_selection'] = False
-            else:
-                inpaint_params['auto_model_selection'] = True
-            
-            # IOPaint通用参数
-            st.sidebar.write("**Processing Parameters:**")
-            
-            inpaint_params['ldm_steps'] = st.sidebar.slider(
-                "LDM Steps", 10, 100, 50, 5,
-                help="扩散模型步数，更多步数=更高质量但更慢"
-            )
-            
-            inpaint_params['hd_strategy'] = st.sidebar.selectbox(
-                "HD Strategy",
-                ["CROP", "ORIGINAL"],
-                index=0,
-                help="高分辨率处理策略: CROP=分块处理, ORIGINAL=原图处理"
-            )
-            
-            # 根据策略显示相关参数
-            if inpaint_params['hd_strategy'] == "CROP":
-                inpaint_params['hd_strategy_crop_margin'] = st.sidebar.slider(
-                    "Crop Margin", 32, 128, 64, 16,
-                    help="分块处理时的边距"
-                )
-                inpaint_params['hd_strategy_crop_trigger_size'] = st.sidebar.slider(
-                    "Crop Trigger Size", 512, 2048, 1024, 64,
-                    help="触发分块处理的最小尺寸"
-                )
-            else:
-                # ORIGINAL策略，设置默认值
-                inpaint_params['hd_strategy_crop_margin'] = 64
-                inpaint_params['hd_strategy_crop_trigger_size'] = 1024
-            
-            # 模型选择提示
-            st.sidebar.info(f"📍 **当前选择**: {specific_model}")
-            if specific_model == "auto":
-                st.sidebar.write("智能选择将根据图像复杂度和mask覆盖率自动选择最佳模型")
-            else:
-                model_descriptions = {
-                    "zits": "最佳结构保持，适合复杂图像",
-                    "mat": "最佳质量，适合大水印",
-                    "fcf": "快速修复，平衡性能",
-                    "lama": "最快速度，适合小水印"
-                }
-                st.sidebar.write(f"**{model_descriptions.get(specific_model, '')}**")
-            
-            # 模型选择变化提示
-            if 'last_parameters' in st.session_state:
-                last_model = st.session_state.last_parameters.get('inpaint_params', {}).get('force_model', 'auto')
-                if last_model != specific_model:
-                    st.sidebar.warning(f"🔄 模型已切换: {last_model} → {specific_model}")
-                    st.sidebar.write("**请重新处理以查看新模型效果**")
-        
-        else:
-            # LaMA specific parameters
-            st.sidebar.write("**LaMA Parameters:**")
-            
-            inpaint_params['prompt'] = ""  # LaMA doesn't use prompts
-            st.sidebar.info("ℹ️ LaMA model doesn't use text prompts")
+        # 通用参数
+        st.sidebar.write("**Processing Parameters:**")
         
         inpaint_params['ldm_steps'] = st.sidebar.slider(
-            "LDM Steps", 10, 200, 50, 10,
-            help="扩散模型步数，更多步数=更高质量"
-        )
-        
-        inpaint_params['ldm_sampler'] = st.sidebar.selectbox(
-            "LDM Sampler",
-            ["ddim", "plms"],
-            help="采样器选择"
+            "LDM Steps", 10, 200, 50, 5,
+            key="ldm_steps_slider",
+            help="扩散模型步数，更多步数=更高质量但更慢"
         )
         
         inpaint_params['hd_strategy'] = st.sidebar.selectbox(
             "HD Strategy",
             ["CROP", "ORIGINAL"],
+            index=0,
+            key="hd_strategy_select",
             help="高分辨率处理策略: CROP=分块处理, ORIGINAL=原图处理"
         )
         
-        # 只在CROP策略下显示Crop Margin
+        # 根据策略显示相关参数
         if inpaint_params['hd_strategy'] == "CROP":
             inpaint_params['hd_strategy_crop_margin'] = st.sidebar.slider(
-                "Crop Margin", 32, 256, 64, 16,
-                help="分块处理边距"
+                "Crop Margin", 32, 128, 64, 16,
+                key="crop_margin_slider",
+                help="分块处理时的边距"
             )
             inpaint_params['hd_strategy_crop_trigger_size'] = st.sidebar.slider(
-                "Crop Trigger Size", 512, 2048, 800, 64,
+                "Crop Trigger Size", 512, 2048, 1024, 64,
+                key="crop_trigger_slider",
                 help="触发分块处理的最小尺寸"
             )
         else:
-            # ORIGINAL策略设置默认值
+            # ORIGINAL策略，设置默认值
             inpaint_params['hd_strategy_crop_margin'] = 64
-            inpaint_params['hd_strategy_crop_trigger_size'] = 800
+            inpaint_params['hd_strategy_crop_trigger_size'] = 1024
+        
+        # 模型描述
+        model_descriptions = {
+            "zits": "最佳结构保持，适合复杂图像",
+            "mat": "最佳质量，适合大水印",
+            "fcf": "快速修复，平衡性能",
+            "lama": "最快速度，适合小水印"
+        }
+        st.sidebar.info(f"📍 **{inpaint_model.upper()}**: {model_descriptions.get(inpaint_model, '')}")
         
         # 设置resize limit默认值（内部使用）
         inpaint_params['hd_strategy_resize_limit'] = 1600
@@ -234,6 +168,7 @@ class ParameterPanel:
         # Common parameters
         inpaint_params['seed'] = st.sidebar.number_input(
             "Seed", -1, 999999, -1,
+            key="seed_input",
             help="随机种子（-1为随机）"
         )
         
@@ -266,13 +201,14 @@ class MainInterface:
         self.config_manager = config_manager
         self.parameter_panel = ParameterPanel(config_manager)
     
-    def _check_parameter_changes(self, mask_model, mask_params, inpaint_params, performance_params):
+    def _check_parameter_changes(self, mask_model, mask_params, inpaint_params, performance_params, transparent):
         """检查参数是否发生变化，如果有变化则清除旧结果以触发界面刷新"""
         current_params = {
             'mask_model': mask_model,
             'mask_params': mask_params.copy(),
             'inpaint_params': inpaint_params.copy(),
-            'performance_params': performance_params.copy()
+            'performance_params': performance_params.copy(),
+            'transparent': transparent
         }
         
         # 检查是否有之前的参数状态
@@ -287,13 +223,12 @@ class MainInterface:
                 key_changes.append('mask_model')
             
             # 检查inpaint模型变化
-            if last_params.get('inpaint_params', {}).get('inpaint_model') != current_params['inpaint_params'].get('inpaint_model'):
+            if last_params.get('inpaint_params', {}).get('model_name') != current_params['inpaint_params'].get('model_name'):
                 key_changes.append('inpaint_model')
             
-            # 检查具体模型选择变化（IOPaint的force_model）
-            if last_params.get('inpaint_params', {}).get('force_model') != current_params['inpaint_params'].get('force_model'):
-                key_changes.append('specific_model')
-            
+            # 检查透明模式变化
+            if last_params.get('transparent') != current_params['transparent']:
+                key_changes.append('transparent_mode')
             
             # 如果有关键参数变化，清除旧结果
             if key_changes:
@@ -332,11 +267,10 @@ class MainInterface:
             self._render_parameter_summary(mask_model, mask_params, inpaint_params, performance_params, transparent)
             
             # 显示当前选择的模型
-            if inpaint_params.get('inpaint_model') == 'iopaint':
-                selected_model = inpaint_params.get('force_model', 'auto')
-                st.info(f"🎯 **当前选择的模型**: IOPaint - {selected_model.upper()}")
+            if inpaint_params.get('model_name'):
+                st.info(f"🎯 **当前选择的模型**: {inpaint_params.get('model_name', 'lama').upper()}")
             else:
-                st.info(f"🎯 **当前选择的模型**: {inpaint_params.get('inpaint_model', 'lama').upper()}")
+                st.info(f"🎯 **当前选择的模型**: LAMA")
             
             # 处理按钮
             self._render_process_button(inference_manager, original_image, mask_model, 
@@ -344,7 +278,7 @@ class MainInterface:
             
             # 显示结果
             if processing_result and processing_result.success:
-                self._render_results(processing_result, original_image, transparent, uploaded_file.name)
+                self._render_results(processing_result, original_image, uploaded_file.name, transparent)
             elif processing_result and not processing_result.success:
                 st.error(f"❌ Processing failed: {processing_result.error_message}")
         else:
@@ -365,54 +299,25 @@ class MainInterface:
             
             with col2:
                 st.write("**Inpainting:**")
-                st.write(f"Model: {inpaint_params.get('inpaint_model', 'lama')}")
+                st.write(f"Model: {inpaint_params.get('model_name', 'lama')}")
                 
-                # Show relevant parameters based on model type
-                if inpaint_params.get('inpaint_model') == 'iopaint':
-                    # IOPaint parameters
-                    key_params = ['ldm_steps', 'hd_strategy', 'auto_model_selection']
-                    for key in key_params:
+                # Show key parameters
+                key_params = ['ldm_steps', 'hd_strategy']
+                for key in key_params:
+                    if key in inpaint_params:
+                        st.write(f"{key}: {inpaint_params[key]}")
+                
+                # Show strategy-specific params
+                if inpaint_params.get('hd_strategy') == 'CROP':
+                    for key in ['hd_strategy_crop_margin', 'hd_strategy_crop_trigger_size']:
                         if key in inpaint_params:
                             st.write(f"{key}: {inpaint_params[key]}")
-                    
-                    # Show forced model if specified
-                    if inpaint_params.get('force_model'):
-                        st.write(f"force_model: {inpaint_params['force_model']}")
-                    
-                    # Show strategy-specific params
-                    if inpaint_params.get('hd_strategy') == 'CROP':
-                        for key in ['hd_strategy_crop_margin', 'hd_strategy_crop_trigger_size']:
-                            if key in inpaint_params:
-                                st.write(f"{key}: {inpaint_params[key]}")
-                    elif inpaint_params.get('hd_strategy') == 'RESIZE':
-                        if 'hd_strategy_resize_limit' in inpaint_params:
-                            st.write(f"hd_strategy_resize_limit: {inpaint_params['hd_strategy_resize_limit']}")
-                else:
-                    # LaMA parameters
-                    pass
+                # Show remaining inpaint parameters
                 for key, value in inpaint_params.items():
-                    if key in ['inpaint_model', 'prompt', 'negative_prompt']:
-                        continue
-                    if key == 'prompt' and not value:
-                        continue
-                    # 特殊处理策略相关参数显示
-                    if key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'ORIGINAL':
-                        if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
-                            st.write(f"{key}: {value} *(不适用于ORIGINAL策略)*")
-                        elif key == 'hd_strategy_resize_limit':
-                            st.write(f"{key}: {value} *(不适用于ORIGINAL策略)*")
-                        else:
-                            st.write(f"{key}: {value}")
-                    elif key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'RESIZE':
-                        if key == 'hd_strategy_crop_margin' or key == 'hd_strategy_crop_trigger_size':
-                            st.write(f"{key}: {value} *(不适用于RESIZE策略)*")
-                        else:
-                            st.write(f"{key}: {value}")
-                    elif key.startswith('hd_strategy_') and inpaint_params.get('hd_strategy') == 'CROP':
-                        if key == 'hd_strategy_resize_limit':
-                            st.write(f"{key}: {value} *(不适用于CROP策略)*")
-                        else:
-                            st.write(f"{key}: {value}")
+                    if key in ['model_name', 'ldm_steps', 'hd_strategy', 'hd_strategy_crop_margin', 'hd_strategy_crop_trigger_size']:
+                        continue  # Already shown above
+                    if key == 'seed' and value == -1:
+                        st.write(f"{key}: Random")
                     else:
                         st.write(f"{key}: {value}")
             
@@ -457,7 +362,7 @@ class MainInterface:
                         st.error(f"❌ Processing failed: {str(e)}")
                         return
     
-    def _render_results(self, result, original_image, transparent, filename):
+    def _render_results(self, result, original_image, filename, transparent):
         """渲染结果"""
         st.subheader("🔄 Before vs After Comparison")
         

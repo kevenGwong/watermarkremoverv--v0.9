@@ -59,6 +59,26 @@ class BaseInpainter(ABC):
             'config': self.config
         }
     
+    def get_available_models(self) -> list:
+        """获取可用的模型列表 - 默认实现"""
+        return [getattr(self, 'model_name', 'unknown')]
+    
+    def get_current_model(self) -> str:
+        """获取当前模型名称 - 默认实现"""
+        return getattr(self, 'model_name', 'unknown')
+    
+    def predict_with_model(self, image: Image.Image, mask: Image.Image, config: Optional[Dict[str, Any]] = None) -> np.ndarray:
+        """使用模型进行预测 - 默认调用predict方法"""
+        return self.predict(image, mask, config)
+    
+    def process_image(self, image: Image.Image, mask: Image.Image, config: Optional[Dict[str, Any]] = None) -> np.ndarray:
+        """处理图像 - 默认调用predict方法"""
+        return self.predict(image, mask, config)
+    
+    def load_model(self):
+        """加载模型 - 默认调用_load_model方法"""
+        return self._load_model()
+    
     def validate_inputs(self, image: Image.Image, mask: Image.Image) -> bool:
         """验证输入参数"""
         try:
